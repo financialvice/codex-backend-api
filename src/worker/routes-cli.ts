@@ -6,11 +6,18 @@ import {
   type StoredTokens,
 } from "./codex-auth"
 import { upsertAccount, devicePollOnce, deviceStart } from "./signin"
-import { setApiKey } from "./index-kv"
+import {
+  consumeCliSignInToken,
+  createCliSignInToken,
+  createSession,
+  setApiKey,
+} from "./index-kv"
 import type { ApiKey } from "./AccountDO"
 import { error, json, randomSlug, sha256Hex } from "./util"
+import { mkSessionCookie } from "./routes-auth"
 
 const KEY_PREFIX = "cba_"
+const CLI_SIGN_IN_PREFIX = "/api/cli/sign-in/"
 
 function mintRawKey(): string {
   return `${KEY_PREFIX}${randomSlug(40)}`
@@ -52,6 +59,10 @@ async function finishCliAuth(
   keyName: string,
 ): Promise<Response> {
   const key = await createApiKey(env, accountId, keyName)
+  const signInToken = await createCliSignInToken(env, {
+    account_id: accountId,
+    email,
+  })
   return json({
     ok: true,
     status: "success",
@@ -59,6 +70,8 @@ async function finishCliAuth(
     base_url: `https://${env.APP_HOSTNAME}`,
     api_key: key.key,
     key_id: key.id,
+    sign_in_url:
+      `https://${env.APP_HOSTNAME}${CLI_SIGN_IN_PREFIX}${signInToken}`,
   })
 }
 
@@ -134,4 +147,32 @@ export async function cliDevicePoll(
     up.email,
     (input.key_name ?? "cli").slice(0, 64) || "cli",
   )
+}
+
+export async function cliBrowserSignIn(
+  token: string,
+  env: Env,
+): Promise<Response> {
+  if (!/^[a-f0-9]{64}$/i.test(token)) return error("invalid sign-in link", 400)
+
+  const sess = await consumeCliSignInToken(env, token)
+  if (!sess) {
+    return new Response(
+      "This sign-in link is expired or has already been used. Run " +
+        "`bunx codex-backend-api login --name agent` again to get a new one.",
+      {
+        status: 410,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      },
+    )
+  }
+
+  const sid = await createSession(env, sess)
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location: "/",
+      "set-cookie": mkSessionCookie(env, sid),
+    },
+  })
 }

@@ -3,6 +3,7 @@ import { error } from "./util"
 
 const CODEX_PREFIX = "/codex"
 const WHAM_PREFIX = "/wham"
+const DEFAULT_CODEX_CLIENT_VERSION = "0.124.0"
 
 function getStub(env: Env, accountId: string) {
   const id = env.ACCOUNT_DO.idFromName(accountId)
@@ -29,7 +30,9 @@ async function proxy(
   env: Env,
   accountId: string,
   upstreamPath: string,
-  opts: { useBody: boolean } = { useBody: true },
+  opts: { useBody: boolean; defaultQuery?: Record<string, string> } = {
+    useBody: true,
+  },
 ): Promise<Response> {
   const stub = getStub(env, accountId)
   const tokens = await stub.ensureFreshToken().catch((e) => {
@@ -59,7 +62,16 @@ async function proxy(
   }
   if (!headers.has("accept")) headers.set("accept", "text/event-stream")
 
-  const url = env.PROXY_URL + upstreamPath
+  const url = new URL(env.PROXY_URL)
+  url.pathname = `${url.pathname.replace(/\/$/, "")}${upstreamPath}`
+  const reqUrl = new URL(req.url)
+  reqUrl.searchParams.forEach((value, key) => {
+    url.searchParams.append(key, value)
+  })
+  for (const [key, value] of Object.entries(opts.defaultQuery ?? {})) {
+    if (!url.searchParams.has(key)) url.searchParams.set(key, value)
+  }
+
   const init: RequestInit = {
     method: req.method,
     headers,
@@ -102,6 +114,7 @@ export async function handleModels(
   ctx.waitUntil(getStub(env, a.accountId).touchKey(a.keyId))
   return proxy(req, env, a.accountId, `${CODEX_PREFIX}/models`, {
     useBody: false,
+    defaultQuery: { client_version: DEFAULT_CODEX_CLIENT_VERSION },
   })
 }
 

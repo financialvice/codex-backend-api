@@ -4,6 +4,7 @@ Your ChatGPT plan, as an OpenAI-compatible Responses API.
 
 - Sign in with ChatGPT (no OpenAI API key needed).
 - Mint API keys — then point any OpenAI SDK at the gateway.
+- Use the CLI's one-time sign-in link to open the web dashboard after headless setup.
 - Delete your account and all stored data from the web UI, CLI, or API.
 
 ```
@@ -13,7 +14,7 @@ const client = new OpenAI({
   baseURL: "https://codex-backend-api.com/v1",
 })
 const stream = await client.responses.create({
-  model: "gpt-5.4",
+  model: "gpt-5.5",
   instructions: "",
   input: "Say hi",
   stream: true,
@@ -32,6 +33,7 @@ Live at **[codex-backend-api.com](https://codex-backend-api.com)**. Docs at **[c
 │  /v1/usage                                        │
 │  /v1/account     API-key account deletion         │
 │  /api/auth/*     ChatGPT device-code flow        │
+│  /api/cli/*      Headless login + dashboard link │
 │  /api/keys       Mint/revoke                      │
 │  /api/account    Session account deletion         │
 │  /docs                                            │

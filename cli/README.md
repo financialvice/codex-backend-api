@@ -19,6 +19,8 @@ export OPENAI_API_KEY="cba_..."
 export OPENAI_BASE_URL="https://codex-backend-api.com/v1"
 ```
 
+`login` also prints a one-time `Sign-in link:`. Open it in a browser to view the dashboard already signed in; it expires after 15 minutes and can be used once.
+
 You can also run it through npm if Bun is installed:
 
 ```sh

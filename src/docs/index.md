@@ -48,11 +48,13 @@ bunx codex-backend-api login --name agent
 eval "$(bunx codex-backend-api env)"
 ```
 
-If the CLI asks for browser authorization, open the printed URL or approve the printed device code. After login, verify the gateway headlessly:
+If the CLI asks for browser authorization, open the printed URL or approve the printed device code. After login, the CLI prints a one-time `Sign-in link:` for the web dashboard. Agents should include that exact full URL in their final answer so the user can open the GUI already signed in.
+
+Verify the gateway headlessly:
 
 ```bash
-curl https://codex-backend-api.com/v1/models \
-  -H "Authorization: Bearer $CBA_API_KEY"
+curl "$OPENAI_BASE_URL/models" \
+  -H "Authorization: Bearer $OPENAI_API_KEY"
 ```
 
 ## curl
@@ -64,7 +66,7 @@ curl -N https://codex-backend-api.com/v1/responses \
   -H "Authorization: Bearer $CBA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-5.4",
+    "model": "gpt-5.5",
     "instructions": "",
     "input": [
       {"type": "message", "role": "user",
@@ -84,7 +86,7 @@ curl -N https://codex-backend-api.com/v1/responses \
   -H "Authorization: Bearer $CBA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-5.4",
+    "model": "gpt-5.5",
     "instructions": "",
     "input": [
       {"type": "message", "role": "user",
@@ -116,6 +118,8 @@ bunx codex-backend-api login --no-read-auth-json   # skip auth.json, do device f
 ```
 
 By default `login` reads `~/.codex/auth.json` (the file the official Codex CLI writes) and uploads those tokens. If that file doesn't exist, it falls back to the ChatGPT device-code flow in your terminal. On success it prints your API key and saves config to `~/.codex-backend-api.json`.
+
+`login` also prints a one-time dashboard sign-in link. Open it in a browser to land in the web UI with a normal session cookie. The link expires after 15 minutes and can be used once.
 
 ```bash
 eval "$(bunx codex-backend-api env)"
@@ -160,7 +164,7 @@ const openai = createOpenAI({
 })
 
 const result = streamText({
-  model: openai.responses("gpt-5.4"),
+  model: openai.responses("gpt-5.5"),
   system: "",
   prompt: "Say hi",
   providerOptions: {
@@ -177,7 +181,7 @@ Image generation tool:
 
 ```ts
 const result = await generateText({
-  model: openai.responses("gpt-5.4"),
+  model: openai.responses("gpt-5.5"),
   prompt: "A corgi on a skateboard",
   tools: {
     image_generation: openai.tools.imageGeneration({ outputFormat: "png" }),
@@ -207,7 +211,7 @@ const client = new OpenAI({
 })
 
 const stream = await client.responses.create({
-  model: "gpt-5.4",
+  model: "gpt-5.5",
   instructions: "",
   input: "Say hi",
   stream: true,
@@ -232,7 +236,7 @@ client = OpenAI(
 )
 
 stream = client.responses.create(
-  model="gpt-5.4",
+  model="gpt-5.5",
   instructions="",
   input="Say hi",
   stream=True,
@@ -259,7 +263,7 @@ const openai = createOpenAI({
 
 export class MyAgent extends Think<Env> {
   getModel(): LanguageModel {
-    return openai.responses("gpt-5.4")
+    return openai.responses("gpt-5.5")
   }
 
   getTools(): ToolSet {
@@ -298,7 +302,7 @@ export class MyAgent extends Agent<Env> {
       baseURL: "https://codex-backend-api.com/v1",
     })
     const result = streamText({
-      model: openai.responses("gpt-5.4"),
+      model: openai.responses("gpt-5.5"),
       prompt,
       providerOptions: { openai: { store: false, instructions: "" } },
     })

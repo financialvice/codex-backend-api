@@ -11,6 +11,7 @@ import {
   cliUploadTokens,
   cliDeviceStart,
   cliDevicePoll,
+  cliBrowserSignIn,
 } from "./routes-cli"
 import {
   deleteAccountByApiKey,
@@ -73,6 +74,9 @@ export default {
       return cliDeviceStart()
     if (p === "/api/cli/device-poll" && request.method === "POST")
       return cliDevicePoll(request, env)
+    const cliSignInMatch = p.match(/^\/api\/cli\/sign-in\/([a-f0-9]{64})$/i)
+    if (cliSignInMatch && request.method === "GET")
+      return cliBrowserSignIn(cliSignInMatch[1]!, env)
 
     if (p === "/api/docs") return listDocs()
     const docMatch = p.match(/^\/api\/docs\/([a-z0-9-]+)$/)

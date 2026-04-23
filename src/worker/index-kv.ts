@@ -40,6 +40,7 @@ export interface Session {
 }
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
+const CLI_SIGN_IN_TTL_SECONDS = 15 * 60
 
 export async function createSession(
   env: Env,
@@ -59,4 +60,27 @@ export async function getSession(env: Env, id: string): Promise<Session | null> 
 
 export async function deleteSession(env: Env, id: string): Promise<void> {
   await env.INDEX.delete(`sess:${id}`)
+}
+
+export async function createCliSignInToken(
+  env: Env,
+  sess: Session,
+): Promise<string> {
+  const token =
+    crypto.randomUUID().replace(/-/g, "") +
+    crypto.randomUUID().replace(/-/g, "")
+  await env.INDEX.put(`cli-signin:${token}`, JSON.stringify(sess), {
+    expirationTtl: CLI_SIGN_IN_TTL_SECONDS,
+  })
+  return token
+}
+
+export async function consumeCliSignInToken(
+  env: Env,
+  token: string,
+): Promise<Session | null> {
+  const key = `cli-signin:${token}`
+  const sess = (await env.INDEX.get(key, "json")) as Session | null
+  if (sess) await env.INDEX.delete(key)
+  return sess
 }

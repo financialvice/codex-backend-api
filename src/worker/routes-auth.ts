@@ -25,7 +25,7 @@ export async function handleDeviceStart(): Promise<Response> {
   return deviceStart()
 }
 
-function mkSessionCookie(env: Env, sid: string): string {
+export function mkSessionCookie(env: Env, sid: string): string {
   return setCookieHeader(SESSION_COOKIE, sid, {
     domain: env.APP_HOSTNAME,
     maxAge: 60 * 60 * 24 * 30,

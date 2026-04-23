@@ -270,7 +270,9 @@ Then follow the docs to create my account and mint an API key with the CLI:
 
 bunx codex-backend-api login --name agent
 
-If browser authorization is needed, start the documented device-code flow and tell me exactly which URL/code to approve. After setup, configure this shell/project with OPENAI_API_KEY and OPENAI_BASE_URL from \`bunx codex-backend-api env\`, then verify with /v1/models or /v1/usage. Do not ask me for an OpenAI API key.`
+If browser authorization is needed, start the documented device-code flow and tell me exactly which URL/code to approve. After setup, configure this shell/project with OPENAI_API_KEY and OPENAI_BASE_URL from \`bunx codex-backend-api env\`, then verify with /v1/models or /v1/usage.
+
+The CLI prints a one-time "Sign-in link:" for the web dashboard after login. Include that exact full URL in your final answer so I can open the GUI already signed in. Do not ask me for an OpenAI API key.`
 
 function fmtElapsed(secs: number): string {
   const m = Math.floor(secs / 60)

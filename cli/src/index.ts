@@ -15,6 +15,10 @@ interface Config {
   key_id: string
 }
 
+interface LoginResult extends Config {
+  sign_in_url?: string
+}
+
 async function readConfig(): Promise<Config | null> {
   try {
     return JSON.parse(await readFile(CONFIG, "utf8")) as Config
@@ -71,7 +75,7 @@ async function readAuthJson(): Promise<{
 async function uploadTokens(
   tokens: Awaited<ReturnType<typeof readAuthJson>>,
   name: string,
-): Promise<Config> {
+): Promise<LoginResult> {
   if (!tokens) throw new Error("no tokens")
   const r = await fetch(`${BASE}/api/cli/upload-tokens`, {
     method: "POST",
@@ -85,10 +89,10 @@ async function uploadTokens(
     }),
   })
   if (!r.ok) throw new Error(`upload-tokens failed: ${r.status} ${await r.text()}`)
-  return (await r.json()) as Config
+  return (await r.json()) as LoginResult
 }
 
-async function deviceFlow(name: string): Promise<Config> {
+async function deviceFlow(name: string): Promise<LoginResult> {
   const start = await fetch(`${BASE}/api/cli/device-start`, { method: "POST" })
   if (!start.ok) throw new Error(`device-start: ${start.status}`)
   const d = (await start.json()) as {
@@ -125,6 +129,7 @@ async function deviceFlow(name: string): Promise<Config> {
           base_url: string
           api_key: string
           key_id: string
+          sign_in_url?: string
         }
     if (j.status === "success") return j
     if (j.status === "error") throw new Error(j.error)
@@ -145,23 +150,35 @@ function hasFlag(args: string[], flag: string): boolean {
 async function cmdLogin(args: string[]) {
   const name = getArg(args, "--name") ?? "cli"
   const noAuthJson = hasFlag(args, "--no-read-auth-json")
-  let cfg: Config
+  let login: LoginResult
   if (!noAuthJson) {
     const tokens = await readAuthJson()
     if (tokens) {
       console.log(`Found ~/.codex/auth.json — uploading tokens…`)
-      cfg = await uploadTokens(tokens, name)
+      login = await uploadTokens(tokens, name)
     } else {
-      cfg = await deviceFlow(name)
+      login = await deviceFlow(name)
     }
   } else {
-    cfg = await deviceFlow(name)
+    login = await deviceFlow(name)
+  }
+  const cfg: Config = {
+    base_url: login.base_url,
+    api_key: login.api_key,
+    email: login.email,
+    key_id: login.key_id,
   }
   await writeConfig(cfg)
   console.log("")
   console.log(`  Signed in as ${cfg.email ?? "(email unknown)"}`)
   console.log(`  Base URL:   ${cfg.base_url}`)
   console.log(`  API Key:    ${cfg.api_key}`)
+  if (login.sign_in_url) {
+    console.log(`  Sign-in link: ${login.sign_in_url}`)
+    console.log(
+      "  Open this link to view the dashboard. It expires in 15 minutes and can be used once.",
+    )
+  }
   console.log("")
   console.log(`  Saved to ${CONFIG}`)
   console.log("")

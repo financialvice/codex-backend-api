@@ -1,6 +1,6 @@
 {
   "name": "codex-backend-api",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for codex-backend-api — your ChatGPT plan as an OpenAI-compatible Responses API.",
   "type": "module",
   "bin": {
