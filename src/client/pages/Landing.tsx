@@ -13,11 +13,14 @@ type State =
   | { kind: "waiting"; device: DeviceStart; startedAt: number }
   | { kind: "error"; message: string }
 
+const REPO = "financialvice/chatfaucet"
+
 export function Landing({ onAuthed }: { onAuthed: () => void }) {
   const [state, setState] = useState<State>({ kind: "idle" })
   const [elapsed, setElapsed] = useState(0)
   const [copiedCode, setCopiedCode] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState(false)
+  const stars = useGithubStars(REPO)
   const cancelRef = useRef(false)
 
   useEffect(() => {
@@ -111,7 +114,24 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
     <Window>
       <RowSpaceBetween style={{ marginBottom: "1rem" }}>
         <span>Chat Faucet</span>
-        <ThemeToggle />
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "2ch",
+          }}
+        >
+          <a href="/docs">docs</a>
+          <a
+            href={`https://github.com/${REPO}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Star chatfaucet on GitHub"
+          >
+            ★ star{stars !== null ? ` ${formatStars(stars)}` : ""}
+          </a>
+          <ThemeToggle />
+        </span>
       </RowSpaceBetween>
 
       <Card title="OVERVIEW">
@@ -124,28 +144,22 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
 
       <Card title="SIGN IN">
         {state.kind === "idle" && (
-          <>
-            <p style={{ marginBottom: "1rem" }}>
-              We use the standard Codex device-code flow. No OpenAI API key
-              required.
-            </p>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "calc(var(--theme-line-height-base) * 0.5rem)",
-              }}
-            >
-              <Button onClick={copyAgentPrompt}>
-                {copiedPrompt
-                  ? "Copied prompt"
-                  : "Get started with agent (copy prompt)"}
-              </Button>
-              <Button theme="SECONDARY" onClick={start}>
-                Sign in with ChatGPT
-              </Button>
-            </div>
-          </>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "calc(var(--theme-line-height-base) * 0.5rem)",
+            }}
+          >
+            <Button onClick={copyAgentPrompt}>
+              {copiedPrompt
+                ? "Copied prompt"
+                : "Get started with agent (copy prompt)"}
+            </Button>
+            <Button theme="SECONDARY" onClick={start}>
+              Sign in with ChatGPT
+            </Button>
+          </div>
         )}
 
         {state.kind === "starting" && (
@@ -244,20 +258,89 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
 
       <div style={{ height: "1rem" }} />
 
-      <Card title="LINKS">
-        <RowSpaceBetween>
-          <a href="/docs">docs</a>
-          <a
-            href="https://github.com/financialvice/chatfaucet"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            source
-          </a>
-        </RowSpaceBetween>
-      </Card>
+      <div
+        style={{
+          marginTop: "1rem",
+          opacity: 0.6,
+          fontSize: "0.875em",
+          lineHeight: "calc(var(--theme-line-height-base) * 1.2em)",
+        }}
+      >
+        by{" "}
+        <a
+          href="https://x.com/financialvice"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          cam
+        </a>{" "}
+        and{" "}
+        <a
+          href="https://x.com/anupambatra_"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          anupam
+        </a>{" "}
+        |{" "}
+        <a
+          href="https://www.dubdubdub.xyz/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          dubdubdub labs
+        </a>{" "}
+        | components by{" "}
+        <a
+          href="https://www.sacred.computer/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          sacred.computer
+        </a>
+      </div>
     </Window>
   )
+}
+
+function useGithubStars(repo: string): number | null {
+  const key = `gh:${repo}:stars`
+  const [count, setCount] = useState<number | null>(() => {
+    try {
+      const cached = localStorage.getItem(key)
+      if (!cached) return null
+      const parsed = JSON.parse(cached) as { count: number; ts: number }
+      if (Date.now() - parsed.ts < 10 * 60 * 1000) return parsed.count
+    } catch {}
+    return null
+  })
+
+  useEffect(() => {
+    if (count !== null) return
+    const ctrl = new AbortController()
+    fetch(`https://api.github.com/repos/${repo}`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? (r.json() as Promise<{ stargazers_count?: number }>) : Promise.reject()))
+      .then((d) => {
+        if (typeof d.stargazers_count !== "number") return
+        setCount(d.stargazers_count)
+        try {
+          localStorage.setItem(
+            key,
+            JSON.stringify({ count: d.stargazers_count, ts: Date.now() }),
+          )
+        } catch {}
+      })
+      .catch(() => {})
+    return () => ctrl.abort()
+  }, [repo, key, count])
+
+  return count
+}
+
+function formatStars(n: number): string {
+  if (n < 1000) return String(n)
+  if (n < 10000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k"
+  return Math.round(n / 1000) + "k"
 }
 
 const AGENT_PROMPT = `I want to use Chat Faucet, an OpenAI-compatible Responses API backed by my ChatGPT plan.
