@@ -11,7 +11,7 @@ import {
 } from "./util"
 import type { ApiKey } from "./AccountDO"
 
-const KEY_PREFIX = "cba_"
+const KEY_PREFIX = "chf_"
 
 function mintRawKey(): string {
   return `${KEY_PREFIX}${randomSlug(40)}`

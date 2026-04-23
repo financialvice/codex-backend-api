@@ -37,7 +37,7 @@ export function Dashboard({ status }: { status: AuthStatus }) {
   const baseUrl = window.location.origin
 
   useEffect(() => {
-    document.title = "dashboard — codex-backend-api"
+    document.title = "dashboard — Chat Faucet"
   }, [])
 
   async function refresh() {
@@ -163,7 +163,7 @@ export function Dashboard({ status }: { status: AuthStatus }) {
   return (
     <Window>
       <RowSpaceBetween style={{ marginBottom: "1rem" }}>
-        <span>codex-backend-api</span>
+        <span>Chat Faucet</span>
         <span
           style={{
             display: "inline-flex",
@@ -448,7 +448,7 @@ Authorization: Bearer <your api key>`}</pre>
           onCancel={() => setConfirmDeleteAccount(false)}
         >
           <p>
-            Delete your codex-backend-api account for{" "}
+            Delete your Chat Faucet account for{" "}
             <strong>{status.email ?? "(unknown)"}</strong>?
           </p>
           <p style={{ opacity: 0.75, marginTop: "0.5rem" }}>

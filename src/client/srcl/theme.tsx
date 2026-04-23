@@ -9,7 +9,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-const STORAGE_KEY = "cba_theme_mode"
+const STORAGE_KEY = "chf_theme_mode"
 const TINT = "tint-blue"
 const ALL_THEMES: Theme[] = ["blue", "light", "dark"]
 

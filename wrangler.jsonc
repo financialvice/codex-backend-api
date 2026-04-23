@@ -6,6 +6,8 @@
   "main": "./src/worker/worker.ts",
   "workers_dev": true,
   "routes": [
+    { "pattern": "chatfaucet.com", "custom_domain": true },
+    { "pattern": "www.chatfaucet.com", "custom_domain": true },
     { "pattern": "codex-backend-api.com", "custom_domain": true }
   ],
   "assets": {
@@ -43,7 +45,7 @@
     }
   ],
   "vars": {
-    "APP_HOSTNAME": "codex-backend-api.com",
+    "APP_HOSTNAME": "chatfaucet.com",
     "PROXY_URL": "https://codex-backend-api-proxy.fly.dev"
   }
 }

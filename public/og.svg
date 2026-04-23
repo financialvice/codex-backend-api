@@ -1,18 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <rect width="1200" height="630" fill="#000000"/>
+  <rect width="1200" height="630" fill="#02040a"/>
+  <rect x="54" y="54" width="1092" height="522" fill="none" stroke="#18d5ff" stroke-width="2"/>
+  <rect x="54" y="54" width="1092" height="52" fill="#0052ff"/>
+  <text x="84" y="89" font-family="Menlo, Monaco, monospace" font-size="23" fill="#ffffff" font-weight="700">chatfaucet.com</text>
+  <text x="1116" y="89" font-family="Menlo, Monaco, monospace" font-size="23" fill="#ffffff" text-anchor="end">[open]</text>
 
-  <rect x="60" y="60" width="1080" height="510" fill="none" stroke="#0052ff" stroke-width="3"/>
-  <rect x="60" y="60" width="1080" height="52" fill="#0052ff"/>
-  <text x="90" y="97" font-family="Menlo, Monaco, monospace" font-size="24" fill="#ffffff" font-weight="700" letter-spacing="0.5">codex-backend-api</text>
+  <text x="104" y="214" font-family="Menlo, Monaco, monospace" font-size="82" fill="#ffffff" font-weight="800">CHAT FAUCET</text>
+  <text x="104" y="288" font-family="Menlo, Monaco, monospace" font-size="36" fill="#18d5ff" font-weight="700">your ChatGPT plan → Responses API</text>
 
-  <text x="1110" y="97" font-family="Menlo, Monaco, monospace" font-size="24" fill="#ffffff" font-weight="400" text-anchor="end">[&#x2715;]</text>
+  <text x="104" y="378" font-family="Menlo, Monaco, monospace" font-size="28" fill="#a9c3ff">Sign in once. Mint an API key. Use any OpenAI SDK.</text>
 
-  <text x="110" y="240" font-family="Menlo, Monaco, monospace" font-size="72" fill="#ffffff" font-weight="700">ChatGPT plan</text>
-  <text x="110" y="324" font-family="Menlo, Monaco, monospace" font-size="72" fill="#0052ff" font-weight="700">→ OpenAI API</text>
+  <g transform="translate(858 178)">
+    <rect x="0" y="0" width="194" height="112" fill="#061225" stroke="#18d5ff" stroke-width="2"/>
+    <path d="M44 36h70c23 0 42 19 42 42v8h-34v-8c0-3-3-6-6-6H44z" fill="none" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+    <path d="M44 36v64" stroke="#ffffff" stroke-width="12" stroke-linecap="square"/>
+    <path d="M130 98c0 20-15 38-26 51-11-13-26-31-26-51 0-16 11-29 26-29s26 13 26 29z" fill="#18d5ff"/>
+    <path d="M104 164v36M76 180v32M132 180v32" stroke="#18d5ff" stroke-width="8" stroke-linecap="square"/>
+  </g>
 
-  <text x="110" y="400" font-family="Menlo, Monaco, monospace" font-size="26" fill="#8a9fd1">Sign in with ChatGPT. Point any OpenAI SDK at the gateway.</text>
-
-  <rect x="90" y="456" width="1020" height="74" fill="#050a14" stroke="#0052ff" stroke-width="2"/>
-  <text x="116" y="502" font-family="Menlo, Monaco, monospace" font-size="26" fill="#ffffff">$ curl https://codex-backend-api.com/v1/responses</text>
-  <rect x="898" y="481" width="14" height="28" fill="#0052ff"/>
+  <rect x="104" y="448" width="868" height="74" fill="#07101d" stroke="#0052ff" stroke-width="2"/>
+  <text x="128" y="494" font-family="Menlo, Monaco, monospace" font-size="23" fill="#ffffff">$ export OPENAI_BASE_URL=https://chatfaucet.com/v1</text>
+  <rect x="930" y="472" width="13" height="28" fill="#18d5ff"/>
 </svg>

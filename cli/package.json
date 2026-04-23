@@ -1,10 +1,10 @@
 {
-  "name": "codex-backend-api",
-  "version": "0.1.2",
-  "description": "CLI for codex-backend-api — your ChatGPT plan as an OpenAI-compatible Responses API.",
+  "name": "chatfaucet",
+  "version": "0.1.0",
+  "description": "CLI for Chat Faucet — your ChatGPT plan as an OpenAI-compatible Responses API.",
   "type": "module",
   "bin": {
-    "codex-backend-api": "src/index.ts"
+    "chatfaucet": "src/index.ts"
   },
   "files": [
     "src"
@@ -12,7 +12,7 @@
   "engines": {
     "bun": ">=1.2.0"
   },
-  "homepage": "https://codex-backend-api.com",
+  "homepage": "https://chatfaucet.com",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/financialvice/codex-backend-api.git",

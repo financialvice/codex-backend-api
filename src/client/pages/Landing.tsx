@@ -21,7 +21,7 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
   const cancelRef = useRef(false)
 
   useEffect(() => {
-    document.title = "codex-backend-api — ChatGPT plan → OpenAI Responses API"
+    document.title = "Chat Faucet — ChatGPT plan → OpenAI Responses API"
   }, [])
 
   useEffect(() => {
@@ -110,14 +110,14 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
   return (
     <Window>
       <RowSpaceBetween style={{ marginBottom: "1rem" }}>
-        <span>codex-backend-api</span>
+        <span>Chat Faucet</span>
         <ThemeToggle />
       </RowSpaceBetween>
 
       <Card title="OVERVIEW">
         Your ChatGPT plan, exposed as an OpenAI-compatible Responses API. Sign
         in once, mint an API key, point any OpenAI SDK at{" "}
-        <code>https://codex-backend-api.com/v1</code>.
+        <code>https://chatfaucet.com/v1</code>.
       </Card>
 
       <div style={{ height: "1rem" }} />
@@ -248,7 +248,7 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
         <RowSpaceBetween>
           <a href="/docs">docs</a>
           <a
-            href="https://github.com/cameronglynn/codex-backend-api"
+            href="https://github.com/financialvice/codex-backend-api"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -260,17 +260,17 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
   )
 }
 
-const AGENT_PROMPT = `I want to use codex-backend-api, an OpenAI-compatible Responses API backed by my ChatGPT plan.
+const AGENT_PROMPT = `I want to use Chat Faucet, an OpenAI-compatible Responses API backed by my ChatGPT plan.
 
 Please curl the agent-readable docs first:
 
-curl -fsSL https://codex-backend-api.com/docs.md
+curl -fsSL https://chatfaucet.com/docs.md
 
 Then follow the docs to create my account and mint an API key with the CLI:
 
-bunx codex-backend-api login --name agent
+bunx chatfaucet login --name agent
 
-If browser authorization is needed, start the documented device-code flow and tell me exactly which URL/code to approve. After setup, configure this shell/project with OPENAI_API_KEY and OPENAI_BASE_URL from \`bunx codex-backend-api env\`, then verify with /v1/models or /v1/usage.
+If browser authorization is needed, start the documented device-code flow and tell me exactly which URL/code to approve. After setup, configure this shell/project with OPENAI_API_KEY and OPENAI_BASE_URL from \`bunx chatfaucet env\`, then verify with /v1/models or /v1/usage.
 
 The CLI prints a one-time "Sign-in link:" for the web dashboard after login. Include that exact full URL in your final answer so I can open the GUI already signed in. Do not ask me for an OpenAI API key.`
 

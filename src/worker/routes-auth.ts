@@ -15,7 +15,7 @@ import {
   setCookieHeader,
 } from "./util"
 
-export const SESSION_COOKIE = "cba_session"
+export const SESSION_COOKIE = "chatfaucet_session"
 
 export async function authStatus(req: Request, env: Env): Promise<Response> {
   const sid = parseCookie(req.headers.get("cookie"), SESSION_COOKIE)

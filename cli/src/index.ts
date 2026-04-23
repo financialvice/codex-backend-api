@@ -3,9 +3,10 @@ import { readFile, writeFile, mkdir, rm } from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
 
-const HOST = process.env.CBA_HOST || "codex-backend-api.com"
+const HOST = process.env.CHATFAUCET_HOST || "chatfaucet.com"
 const BASE = `https://${HOST}`
-const CONFIG = join(homedir(), ".codex-backend-api.json")
+const CONFIG = join(homedir(), ".chatfaucet.json")
+const LEGACY_CONFIG = join(homedir(), ".codex-backend-api.json")
 const AUTH_JSON = join(homedir(), ".codex", "auth.json")
 
 interface Config {
@@ -20,11 +21,12 @@ interface LoginResult extends Config {
 }
 
 async function readConfig(): Promise<Config | null> {
-  try {
-    return JSON.parse(await readFile(CONFIG, "utf8")) as Config
-  } catch {
-    return null
+  for (const path of [CONFIG, LEGACY_CONFIG]) {
+    try {
+      return JSON.parse(await readFile(path, "utf8")) as Config
+    } catch {}
   }
+  return null
 }
 
 async function readCredentials(): Promise<{
@@ -35,8 +37,8 @@ async function readCredentials(): Promise<{
   const c = await readConfig()
   if (c?.api_key) return c
 
-  const apiKey = process.env.CBA_API_KEY
-  const baseUrl = process.env.CBA_BASE_URL
+  const apiKey = process.env.CHATFAUCET_API_KEY || process.env.CBA_API_KEY
+  const baseUrl = process.env.CHATFAUCET_BASE_URL || process.env.CBA_BASE_URL
   if (!apiKey || !baseUrl) return null
   return {
     api_key: apiKey,
@@ -187,21 +189,21 @@ async function cmdLogin(args: string[]) {
   console.log("")
   console.log(`  Saved to ${CONFIG}`)
   console.log("")
-  console.log("  Run `codex-backend-api env` to get shell exports.")
+  console.log("  Run `chatfaucet env` to get shell exports.")
 }
 
 async function cmdEnv() {
   const c = await readConfig()
-  if (!c) throw new Error("not logged in — run `codex-backend-api login`")
+  if (!c) throw new Error("not logged in — run `chatfaucet login`")
   console.log(`export OPENAI_API_KEY="${c.api_key}"`)
   console.log(`export OPENAI_BASE_URL="${c.base_url}/v1"`)
-  console.log(`export CBA_API_KEY="${c.api_key}"`)
-  console.log(`export CBA_BASE_URL="${c.base_url}"`)
+  console.log(`export CHATFAUCET_API_KEY="${c.api_key}"`)
+  console.log(`export CHATFAUCET_BASE_URL="${c.base_url}"`)
 }
 
 async function cmdKeysList() {
   const c = await readCredentials()
-  if (!c) throw new Error("not logged in — run `codex-backend-api login`")
+  if (!c) throw new Error("not logged in — run `chatfaucet login`")
   const r = await fetch(`${c.base_url}/v1/usage`, {
     headers: { Authorization: `Bearer ${c.api_key}` },
   })
@@ -226,7 +228,7 @@ async function cmdDeleteAccount(args: string[]) {
   const c = await readCredentials()
   if (!c) {
     throw new Error(
-      "not logged in — run `codex-backend-api login` or set CBA_API_KEY and CBA_BASE_URL",
+      "not logged in — run `chatfaucet login` or set CHATFAUCET_API_KEY and CHATFAUCET_BASE_URL",
     )
   }
   const r = await fetch(`${c.base_url}/v1/account`, {
@@ -243,19 +245,20 @@ async function cmdDeleteAccount(args: string[]) {
 }
 
 function help() {
-  console.log(`codex-backend-api — your ChatGPT plan as an OpenAI-compatible Responses API
+  console.log(`Chat Faucet — your ChatGPT plan as an OpenAI-compatible Responses API
 
 Usage:
-  codex-backend-api login [--name <label>] [--no-read-auth-json]
-  codex-backend-api env
-  codex-backend-api keys
-  codex-backend-api logout
-  codex-backend-api delete-account --yes
-  codex-backend-api --help
+  chatfaucet login [--name <label>] [--no-read-auth-json]
+  chatfaucet env
+  chatfaucet keys
+  chatfaucet logout
+  chatfaucet delete-account --yes
+  chatfaucet --help
 
 Env:
-  CBA_HOST   Override the gateway host (default: codex-backend-api.com)
-  CBA_API_KEY and CBA_BASE_URL can be used for headless API-key commands
+  CHATFAUCET_HOST   Override the gateway host (default: chatfaucet.com)
+  CHATFAUCET_API_KEY and CHATFAUCET_BASE_URL can be used for headless API-key commands
+  CBA_API_KEY and CBA_BASE_URL are still accepted as legacy aliases
 `)
 }
 

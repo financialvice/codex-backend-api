@@ -42,7 +42,7 @@ async function proxy(
   headers.set("Authorization", `Bearer ${tokens.access_token}`)
   headers.set("chatgpt-account-id", tokens.account_id)
   headers.set("originator", "codex_cli_rs")
-  headers.set("User-Agent", "codex-backend-api")
+  headers.set("User-Agent", "chatfaucet")
   headers.set("OpenAI-Beta", "responses=experimental")
   headers.set("X-Proxy-Secret", env.PROXY_SECRET)
 

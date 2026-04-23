@@ -24,7 +24,7 @@ export function Docs({ path, signedIn }: { path: string; signedIn: boolean }) {
   const contentRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    document.title = "docs — codex-backend-api"
+    document.title = "docs — Chat Faucet"
   }, [])
 
   useEffect(() => {
@@ -124,7 +124,7 @@ export function Docs({ path, signedIn }: { path: string; signedIn: boolean }) {
   return (
     <Window>
       <RowSpaceBetween style={{ marginBottom: "1rem" }}>
-        <a href="/">← {signedIn ? "dashboard" : "codex-backend-api"}</a>
+        <a href="/">← {signedIn ? "dashboard" : "Chat Faucet"}</a>
         <ThemeToggle />
       </RowSpaceBetween>
 

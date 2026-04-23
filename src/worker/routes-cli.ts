@@ -16,7 +16,7 @@ import type { ApiKey } from "./AccountDO"
 import { error, json, randomSlug, rateLimit, requireJson, sha256Hex } from "./util"
 import { mkSessionCookie } from "./routes-auth"
 
-const KEY_PREFIX = "cba_"
+const KEY_PREFIX = "chf_"
 const CLI_SIGN_IN_PREFIX = "/api/cli/sign-in/"
 
 function mintRawKey(): string {
@@ -179,7 +179,7 @@ export async function cliBrowserSignIn(
 ): Promise<Response> {
   if (!/^[a-f0-9]{64}$/i.test(token)) {
     return signInLinkError(
-      "This sign-in link is malformed. Run `bunx codex-backend-api login --name agent` again to get a fresh link.",
+      "This sign-in link is malformed. Run `bunx chatfaucet login --name agent` again to get a fresh link.",
       400,
     )
   }
@@ -187,7 +187,7 @@ export async function cliBrowserSignIn(
   const sess = await consumeCliSignInToken(env, token)
   if (!sess) {
     return signInLinkError(
-      "This sign-in link is expired or has already been used. Run `bunx codex-backend-api login --name agent` again to get a new one.",
+      "This sign-in link is expired or has already been used. Run `bunx chatfaucet login --name agent` again to get a new one.",
       410,
     )
   }

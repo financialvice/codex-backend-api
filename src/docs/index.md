@@ -1,4 +1,4 @@
-# codex-backend-api
+# Chat Faucet
 
 An OpenAI-compatible Responses API backed by your ChatGPT plan.
 
@@ -7,7 +7,7 @@ Sign in with ChatGPT → mint an API key → point any OpenAI SDK at the gateway
 ## Endpoint
 
 ```text
-https://codex-backend-api.com
+https://chatfaucet.com
 ```
 
 That base URL exposes these endpoints:
@@ -42,14 +42,14 @@ The ChatGPT Codex backend does not accept the SDK shorthand string form
 Agents should start by fetching the raw docs:
 
 ```bash
-curl -fsSL https://codex-backend-api.com/docs.md
+curl -fsSL https://chatfaucet.com/docs.md
 ```
 
 Then run the CLI login, which creates the account if needed and mints an API key:
 
 ```bash
-bunx codex-backend-api login --name agent
-eval "$(bunx codex-backend-api env)"
+bunx chatfaucet login --name agent
+eval "$(bunx chatfaucet env)"
 ```
 
 If the CLI asks for browser authorization, open the printed URL or approve the printed device code. After login, the CLI prints a one-time `Sign-in link:` for the web dashboard. Agents should include that exact full URL in their final answer so the user can open the GUI already signed in.
@@ -66,8 +66,8 @@ curl "$OPENAI_BASE_URL/models" \
 The simplest thing that works.
 
 ```bash
-curl -N https://codex-backend-api.com/v1/responses \
-  -H "Authorization: Bearer $CBA_API_KEY" \
+curl -N https://chatfaucet.com/v1/responses \
+  -H "Authorization: Bearer $CHATFAUCET_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-5.5",
@@ -86,8 +86,8 @@ The response is Server-Sent Events. Each `data:` line is a JSON event — watch 
 Image generation is a tool, not an endpoint:
 
 ```bash
-curl -N https://codex-backend-api.com/v1/responses \
-  -H "Authorization: Bearer $CBA_API_KEY" \
+curl -N https://chatfaucet.com/v1/responses \
+  -H "Authorization: Bearer $CHATFAUCET_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-5.5",
@@ -107,47 +107,47 @@ The image comes back base64-encoded inside an `image_generation_call` output ite
 Usage:
 
 ```bash
-curl https://codex-backend-api.com/v1/usage \
-  -H "Authorization: Bearer $CBA_API_KEY"
+curl https://chatfaucet.com/v1/usage \
+  -H "Authorization: Bearer $CHATFAUCET_API_KEY"
 ```
 
 ## CLI
 
-`bunx codex-backend-api` — sign in and mint keys from your terminal.
+`bunx chatfaucet` — sign in and mint keys from your terminal.
 
 ```bash
-bunx codex-backend-api login
-bunx codex-backend-api login --name "laptop"
-bunx codex-backend-api login --no-read-auth-json   # skip auth.json, do device flow
+bunx chatfaucet login
+bunx chatfaucet login --name "laptop"
+bunx chatfaucet login --no-read-auth-json   # skip auth.json, do device flow
 ```
 
-By default `login` reads `~/.codex/auth.json` (the file the official Codex CLI writes) and uploads those tokens. If that file doesn't exist, it falls back to the ChatGPT device-code flow in your terminal. On success it prints your API key and saves config to `~/.codex-backend-api.json`.
+By default `login` reads `~/.codex/auth.json` (the file the official Codex CLI writes) and uploads those tokens. If that file doesn't exist, it falls back to the ChatGPT device-code flow in your terminal. On success it prints your API key and saves config to `~/.chatfaucet.json`.
 
 `login` also prints a one-time dashboard sign-in link. Open it in a browser to land in the web UI with a normal session cookie. The link expires after 15 minutes and can be used once.
 
 ```bash
-eval "$(bunx codex-backend-api env)"
+eval "$(bunx chatfaucet env)"
 ```
 
 Prints shell exports for `OPENAI_API_KEY` and `OPENAI_BASE_URL` — drop into your shell rc file to make any OpenAI-compatible tool "just work."
 
-Self-host: set `CBA_HOST` to point at your own instance.
+Self-host: set `CHATFAUCET_HOST` to point at your own instance.
 
 ```bash
-CBA_HOST=my-gateway.example.com bunx codex-backend-api login
+CHATFAUCET_HOST=my-gateway.example.com bunx chatfaucet login
 ```
 
 Delete your account and all server-side data:
 
 ```bash
-bunx codex-backend-api delete-account --yes
+bunx chatfaucet delete-account --yes
 ```
 
 For headless API use, authenticate with any active API key. This deletes the account, stored ChatGPT tokens, all API key records, API key indexes, and web sessions:
 
 ```bash
-curl -X DELETE https://codex-backend-api.com/v1/account \
-  -H "Authorization: Bearer $CBA_API_KEY"
+curl -X DELETE https://chatfaucet.com/v1/account \
+  -H "Authorization: Bearer $CHATFAUCET_API_KEY"
 ```
 
 ## Vercel AI SDK
@@ -163,8 +163,8 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { streamText } from "ai"
 
 const openai = createOpenAI({
-  apiKey: process.env.CBA_API_KEY!,
-  baseURL: "https://codex-backend-api.com/v1",
+  apiKey: process.env.CHATFAUCET_API_KEY!,
+  baseURL: "https://chatfaucet.com/v1",
 })
 
 const result = streamText({
@@ -211,8 +211,8 @@ bun add openai
 import OpenAI from "openai"
 
 const client = new OpenAI({
-  apiKey: process.env.CBA_API_KEY!,
-  baseURL: "https://codex-backend-api.com/v1",
+  apiKey: process.env.CHATFAUCET_API_KEY!,
+  baseURL: "https://chatfaucet.com/v1",
 })
 
 const stream = await client.responses.create({
@@ -242,8 +242,8 @@ Python:
 from openai import OpenAI
 
 client = OpenAI(
-  api_key="cba_...",
-  base_url="https://codex-backend-api.com/v1",
+  api_key="chf_...",
+  base_url="https://chatfaucet.com/v1",
 )
 
 stream = client.responses.create(
@@ -274,8 +274,8 @@ import { createOpenAI } from "@ai-sdk/openai"
 import type { LanguageModel, ToolSet } from "ai"
 
 const openai = createOpenAI({
-  apiKey: "cba_...",
-  baseURL: "https://codex-backend-api.com/v1",
+  apiKey: "chf_...",
+  baseURL: "https://chatfaucet.com/v1",
 })
 
 export class MyAgent extends Think<Env> {
@@ -299,10 +299,10 @@ export class MyAgent extends Think<Env> {
 }
 ```
 
-Stash your API key in a Workers secret and pull it via `env.CBA_API_KEY`:
+Stash your API key in a Workers secret and pull it via `env.CHATFAUCET_API_KEY`:
 
 ```bash
-bunx wrangler secret put CBA_API_KEY
+bunx wrangler secret put CHATFAUCET_API_KEY
 ```
 
 `@cloudflare/agents`:
@@ -315,8 +315,8 @@ import { createOpenAI } from "@ai-sdk/openai"
 export class MyAgent extends Agent<Env> {
   async onMessage(prompt: string) {
     const openai = createOpenAI({
-      apiKey: this.env.CBA_API_KEY,
-      baseURL: "https://codex-backend-api.com/v1",
+      apiKey: this.env.CHATFAUCET_API_KEY,
+      baseURL: "https://chatfaucet.com/v1",
     })
     const result = streamText({
       model: openai.responses("gpt-5.5"),
@@ -328,10 +328,10 @@ export class MyAgent extends Agent<Env> {
 }
 ```
 
-This works because traffic goes to `codex-backend-api.com` (a Worker) — not `chatgpt.com` directly. Workers can't reach `chatgpt.com/backend-api/*` (managed-challenge 403). The Worker proxies through a small non-Cloudflare host (Fly.io) that can.
+This works because traffic goes to `chatfaucet.com` (a Worker) — not `chatgpt.com` directly. Workers can't reach `chatgpt.com/backend-api/*` (managed-challenge 403). The Worker proxies through a small non-Cloudflare host (Fly.io) that can.
 
 ## How it works
 
 Your ChatGPT OAuth tokens are stored in a per-user Durable Object. When a request comes in with your API key, we refresh your ChatGPT access token if needed and forward to `chatgpt.com/backend-api/codex/*` through a thin Fly-hosted proxy.
 
-Code: [github.com/cameronglynn/codex-backend-api](https://github.com/cameronglynn/codex-backend-api)
+Code: [github.com/financialvice/codex-backend-api](https://github.com/financialvice/codex-backend-api)

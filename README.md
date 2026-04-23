@@ -1,4 +1,4 @@
-# codex-backend-api
+# Chat Faucet
 
 Your ChatGPT plan, as an OpenAI-compatible Responses API.
 
@@ -10,8 +10,8 @@ Your ChatGPT plan, as an OpenAI-compatible Responses API.
 ```
 import OpenAI from "openai"
 const client = new OpenAI({
-  apiKey: "cba_...",
-  baseURL: "https://codex-backend-api.com/v1",
+  apiKey: "chf_...",
+  baseURL: "https://chatfaucet.com/v1",
 })
 const stream = await client.responses.create({
   model: "gpt-5.5",
@@ -28,12 +28,12 @@ const stream = await client.responses.create({
 })
 ```
 
-Live at **[codex-backend-api.com](https://codex-backend-api.com)**. Docs at **[codex-backend-api.com/docs](https://codex-backend-api.com/docs)**.
+Live at **[chatfaucet.com](https://chatfaucet.com)**. Docs at **[chatfaucet.com/docs](https://chatfaucet.com/docs)**.
 
 ## How it works
 
 ```
-┌─ Worker (codex-backend-api.com) ─────────────────┐
+┌─ Worker (chatfaucet.com) ─────────────────┐
 │  /v1/responses   API-key auth, SSE passthrough   │
 │  /v1/models                                       │
 │  /v1/usage                                        │
@@ -69,7 +69,7 @@ src/
   client/        Vite + React SPA
   docs/          Markdown served at /docs
 proxy/           Fly.io Bun HTTP proxy
-cli/             bunx codex-backend-api
+cli/             bunx chatfaucet
 ```
 
 ## Self-host
