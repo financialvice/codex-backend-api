@@ -41,11 +41,6 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
     setState({ kind: "starting" })
     try {
       const device = await postJson<DeviceStart>("/api/auth/device-start")
-      window.open(
-        device.verification_uri_complete,
-        "_blank",
-        "noopener,noreferrer",
-      )
       setState({ kind: "waiting", device, startedAt: Date.now() })
       poll(device)
     } catch (e) {
@@ -170,52 +165,33 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
 
         {state.kind === "waiting" && (
           <>
-            <p style={{ marginBottom: "0.5rem" }}>
-              A new tab should have opened. If not,{" "}
-              <a
-                href={state.device.verification_uri_complete}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                click here to authorize
-              </a>
-              .
-            </p>
-            <div style={{ margin: "1rem 0" }}>
-              <div style={{ opacity: 0.7, marginBottom: "0.25rem" }}>
-                Your code:
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "stretch",
-                  gap: "1ch",
-                }}
-              >
-                <code
-                  style={{
-                    flex: 1,
-                    background: "var(--theme-background-input)",
-                    boxShadow: "inset 0 0 0 2px var(--theme-border)",
-                    padding: "0 1ch",
-                    lineHeight:
-                      "calc(var(--theme-line-height-base) * 2em)",
-                    letterSpacing: "0.25ch",
-                    fontSize: "1.1em",
-                  }}
+            <ol style={{ margin: "0 0 1rem 0" }}>
+              <li style={{ marginBottom: "0.5rem" }}>
+                <a
+                  href={state.device.verification_uri}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  {state.device.user_code}
-                </code>
-                <div style={{ width: "14ch", flexShrink: 0 }}>
-                  <Button
-                    theme="SECONDARY"
-                    onClick={() => copyCode(state.device.user_code)}
-                  >
-                    {copiedCode ? "Copied ✓" : "Copy"}
-                  </Button>
+                  Sign in to ChatGPT
+                </a>{" "}
+                (opens a new tab).
+              </li>
+              <li style={{ marginBottom: "0.5rem" }}>
+                If prompted, check your one-time password app for a code.
+                <MockOtpInput />
+              </li>
+              <li>
+                <strong>Lastly</strong>, enter this code to grant Chat Faucet
+                access:
+                <div style={{ margin: "0.75rem 0 0 0" }}>
+                  <SegmentedCode
+                    code={state.device.user_code}
+                    onCopy={() => copyCode(state.device.user_code)}
+                    copied={copiedCode}
+                  />
                 </div>
-              </div>
-            </div>
+              </li>
+            </ol>
             <RowSpaceBetween style={{ alignItems: "baseline" }}>
               <span>
                 Waiting <BlockLoader mode={1} />{" "}
@@ -300,6 +276,120 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
         </a>
       </div>
     </Window>
+  )
+}
+
+function MockOtpInput() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        marginTop: "0.5rem",
+        maxWidth: "32ch",
+        padding: "0.35rem 1ch 0.25rem",
+        border: "1px solid var(--theme-border)",
+        background: "var(--theme-background-input)",
+        opacity: 0.55,
+        lineHeight: "calc(var(--theme-line-height-base) * 1em)",
+      }}
+    >
+      <div style={{ fontSize: "0.8em", opacity: 0.75 }}>One-time code</div>
+      <div style={{ fontSize: "1em" }}>▮</div>
+    </div>
+  )
+}
+
+function SegmentedCode({
+  code,
+  onCopy,
+  copied,
+}: {
+  code: string
+  onCopy: () => void
+  copied: boolean
+}) {
+  const groups = code.split("-")
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "2ch",
+        flexWrap: "wrap",
+      }}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onCopy}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onCopy()
+          }
+        }}
+        aria-label={`Copy code ${code}`}
+        title="click to copy"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75ch",
+          cursor: "pointer",
+          userSelect: "all",
+        }}
+      >
+        {groups.map((group, gi) => (
+          <div
+            key={gi}
+            style={{ display: "flex", alignItems: "center", gap: "0.5ch" }}
+          >
+            {group.split("").map((ch, ci) => (
+              <span
+                key={ci}
+                style={{
+                  width: "1.6em",
+                  height: "1.8em",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow:
+                    "inset 0 0 0 2px var(--theme-focused-foreground)",
+                  color: "var(--theme-focused-foreground)",
+                  background: "transparent",
+                  fontFamily: "var(--font-family-mono)",
+                  fontSize: "1.35em",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}
+              >
+                {ch}
+              </span>
+            ))}
+            {gi < groups.length - 1 && (
+              <span
+                style={{
+                  fontSize: "1.35em",
+                  color: "var(--theme-focused-foreground)",
+                  padding: "0 0.25ch",
+                }}
+              >
+                -
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      <span
+        aria-live="polite"
+        style={{
+          opacity: copied ? 0.8 : 0,
+          transition: "opacity 150ms ease",
+          fontSize: "0.9em",
+        }}
+      >
+        copied to clipboard ✓
+      </span>
+    </div>
   )
 }
 
