@@ -35,9 +35,8 @@ async function proxy(
   },
 ): Promise<Response> {
   const stub = getStub(env, accountId)
-  const tokens = await stub.ensureFreshToken().catch((e) => {
-    throw new Error(`token error: ${String(e)}`)
-  })
+  const tokens = await stub.ensureFreshToken().catch(() => null)
+  if (!tokens) return error("token refresh failed; sign in again", 401)
 
   const headers = new Headers()
   headers.set("Authorization", `Bearer ${tokens.access_token}`)

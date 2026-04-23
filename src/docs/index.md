@@ -27,6 +27,10 @@ Three request fields are required (even though they feel redundant):
 - `stream` — must be `true`
 - `store` — must be `false`
 
+Direct Responses calls must use list-shaped message input, as shown below.
+The ChatGPT Codex backend does not accept the SDK shorthand string form
+(`input: "Say hi"`).
+
 ## What this is NOT
 
 - Not a general-purpose OpenAI proxy. Only the Responses API shape is served.
@@ -196,7 +200,8 @@ The Codex backend requires `store: false` on every request. The Vercel AI SDK de
 
 ## openai-node
 
-The official OpenAI SDK works unmodified — set `baseURL` and `apiKey`.
+The official OpenAI SDK works with `baseURL` and `apiKey`. Use the
+list-shaped Responses input shown here.
 
 ```bash
 bun add openai
@@ -213,7 +218,13 @@ const client = new OpenAI({
 const stream = await client.responses.create({
   model: "gpt-5.5",
   instructions: "",
-  input: "Say hi",
+  input: [
+    {
+      type: "message",
+      role: "user",
+      content: [{ type: "input_text", text: "Say hi" }],
+    },
+  ],
   stream: true,
   store: false,
 })
@@ -238,7 +249,13 @@ client = OpenAI(
 stream = client.responses.create(
   model="gpt-5.5",
   instructions="",
-  input="Say hi",
+  input=[
+    {
+      "type": "message",
+      "role": "user",
+      "content": [{"type": "input_text", "text": "Say hi"}],
+    }
+  ],
   stream=True,
   store=False,
 )

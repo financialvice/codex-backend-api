@@ -74,7 +74,7 @@ export default {
       return cliDeviceStart()
     if (p === "/api/cli/device-poll" && request.method === "POST")
       return cliDevicePoll(request, env)
-    const cliSignInMatch = p.match(/^\/api\/cli\/sign-in\/([a-f0-9]{64})$/i)
+    const cliSignInMatch = p.match(/^\/api\/cli\/sign-in\/([^/]+)$/)
     if (cliSignInMatch && request.method === "GET")
       return cliBrowserSignIn(cliSignInMatch[1]!, env)
 

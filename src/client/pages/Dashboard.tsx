@@ -23,6 +23,8 @@ export function Dashboard({ status }: { status: AuthStatus }) {
   const [name, setName] = useState("")
   const [usage, setUsage] = useState<unknown>(null)
   const [usageErr, setUsageErr] = useState<string | null>(null)
+  const [keysErr, setKeysErr] = useState<string | null>(null)
+  const [actionErr, setActionErr] = useState<string | null>(null)
   const [revokingKey, setRevokingKey] = useState<ApiKeyPublic | null>(null)
   const [copiedKey, setCopiedKey] = useState(false)
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false)
@@ -39,8 +41,13 @@ export function Dashboard({ status }: { status: AuthStatus }) {
   }, [])
 
   async function refresh() {
-    const r = await getJson<{ keys: ApiKeyPublic[] }>("/api/keys")
-    setKeys(r.keys)
+    try {
+      const r = await getJson<{ keys: ApiKeyPublic[] }>("/api/keys")
+      setKeys(r.keys)
+      setKeysErr(null)
+    } catch (e) {
+      setKeysErr(messageFromError(e))
+    }
   }
 
   async function refreshUsage() {
@@ -93,18 +100,23 @@ export function Dashboard({ status }: { status: AuthStatus }) {
   }, [newKey])
 
   async function create() {
-    const r = await postJson<{
-      key: string
-      id: string
-      name: string
-    }>("/api/keys", {
-      name: name || "default",
-    })
-    setNewKey(r.key)
-    setNewKeyName(r.name)
-    setName("")
-    refresh()
-    setTimeout(() => nameInputRef.current?.focus(), 0)
+    try {
+      setActionErr(null)
+      const r = await postJson<{
+        key: string
+        id: string
+        name: string
+      }>("/api/keys", {
+        name: name || "default",
+      })
+      setNewKey(r.key)
+      setNewKeyName(r.name)
+      setName("")
+      refresh()
+      setTimeout(() => nameInputRef.current?.focus(), 0)
+    } catch (e) {
+      setActionErr(`Couldn't create key: ${messageFromError(e)}`)
+    }
   }
 
   async function copyNewKey() {
@@ -117,14 +129,25 @@ export function Dashboard({ status }: { status: AuthStatus }) {
   }
 
   async function revoke(id: string) {
-    await del(`/api/keys/${id}`)
-    setRevokingKey(null)
-    refresh()
+    try {
+      setActionErr(null)
+      await del(`/api/keys/${id}`)
+      setRevokingKey(null)
+      refresh()
+    } catch (e) {
+      setActionErr(`Couldn't revoke key: ${messageFromError(e)}`)
+      setRevokingKey(null)
+    }
   }
 
   async function signOut() {
-    await postJson("/api/auth/sign-out")
-    window.location.href = "/"
+    try {
+      setActionErr(null)
+      await postJson("/api/auth/sign-out")
+      window.location.href = "/"
+    } catch (e) {
+      setActionErr(`Couldn't sign out: ${messageFromError(e)}`)
+    }
   }
 
   async function deleteAccount() {
@@ -160,6 +183,15 @@ export function Dashboard({ status }: { status: AuthStatus }) {
         Your API keys authenticate requests to the gateway. One key per
         client; revoke any time.
       </Card>
+
+      {actionErr && (
+        <>
+          <div style={{ height: "1rem" }} />
+          <Card title="ACTION FAILED">
+            <p style={{ color: "var(--ansi-9-red)" }}>{actionErr}</p>
+          </Card>
+        </>
+      )}
 
       <div style={{ height: "1rem" }} />
 
@@ -255,7 +287,9 @@ Authorization: Bearer <your api key>`}</pre>
       <div style={{ height: "1rem" }} />
 
       <Card title="API KEYS">
-        {keys == null ? (
+        {keysErr ? (
+          <p style={{ color: "var(--ansi-9-red)" }}>{keysErr}</p>
+        ) : keys == null ? (
           <span>
             Loading <BlockLoader mode={1} />
           </span>
@@ -620,6 +654,10 @@ function relDate(secs: number): string {
 
 function absDate(secs: number): string {
   return new Date(secs * 1000).toLocaleString()
+}
+
+function messageFromError(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
 }
 
 const inputStyle: React.CSSProperties = {

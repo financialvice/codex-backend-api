@@ -131,11 +131,19 @@ export async function cliDevicePoll(
   req: Request,
   env: Env,
 ): Promise<Response> {
-  const input = (await req.json()) as {
+  const input = (await req.json().catch(() => null)) as {
     device_auth_id: string
     user_code: string
     key_name?: string
+  } | null
+  if (
+    !input ||
+    typeof input.device_auth_id !== "string" ||
+    typeof input.user_code !== "string"
+  ) {
+    return error("device_auth_id and user_code required", 400)
   }
+
   const r = await devicePollOnce(input)
   if (r.status !== "success") {
     return json(r, r.status === "error" ? 500 : 200)
@@ -153,17 +161,18 @@ export async function cliBrowserSignIn(
   token: string,
   env: Env,
 ): Promise<Response> {
-  if (!/^[a-f0-9]{64}$/i.test(token)) return error("invalid sign-in link", 400)
+  if (!/^[a-f0-9]{64}$/i.test(token)) {
+    return signInLinkError(
+      "This sign-in link is malformed. Run `bunx codex-backend-api login --name agent` again to get a fresh link.",
+      400,
+    )
+  }
 
   const sess = await consumeCliSignInToken(env, token)
   if (!sess) {
-    return new Response(
-      "This sign-in link is expired or has already been used. Run " +
-        "`bunx codex-backend-api login --name agent` again to get a new one.",
-      {
-        status: 410,
-        headers: { "content-type": "text/plain; charset=utf-8" },
-      },
+    return signInLinkError(
+      "This sign-in link is expired or has already been used. Run `bunx codex-backend-api login --name agent` again to get a new one.",
+      410,
     )
   }
 
@@ -174,5 +183,12 @@ export async function cliBrowserSignIn(
       location: "/",
       "set-cookie": mkSessionCookie(env, sid),
     },
+  })
+}
+
+function signInLinkError(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: { "content-type": "text/plain; charset=utf-8" },
   })
 }

@@ -16,7 +16,13 @@ const client = new OpenAI({
 const stream = await client.responses.create({
   model: "gpt-5.5",
   instructions: "",
-  input: "Say hi",
+  input: [
+    {
+      type: "message",
+      role: "user",
+      content: [{ type: "input_text", text: "Say hi" }],
+    },
+  ],
   stream: true,
   store: false,
 })

@@ -45,7 +45,15 @@ export async function handleDevicePoll(
   req: Request,
   env: Env,
 ): Promise<Response> {
-  const input = (await req.json()) as DevicePollInput
+  const input = (await req.json().catch(() => null)) as DevicePollInput | null
+  if (
+    !input ||
+    typeof input.device_auth_id !== "string" ||
+    typeof input.user_code !== "string"
+  ) {
+    return error("device_auth_id and user_code required", 400)
+  }
+
   const r = await devicePollOnce(input)
   if (r.status !== "success") {
     return json(r, r.status === "error" ? 500 : 200)

@@ -7,16 +7,20 @@ function getStub(env: Env, accountId: string) {
   return env.ACCOUNT_DO.get(id)
 }
 
-async function deleteSessionsForAccount(env: Env, accountId: string) {
+async function deleteIndexObjectsForAccount(
+  env: Env,
+  prefix: string,
+  accountId: string,
+) {
   let cursor: string | undefined
   do {
-    const page = await env.INDEX.list({ prefix: "sess:", cursor })
+    const page = await env.INDEX.list({ prefix, cursor })
     await Promise.all(
       page.keys.map(async (key) => {
-        const sess = await env.INDEX.get<{
+        const item = await env.INDEX.get<{
           account_id?: string
         }>(key.name, "json")
-        if (sess?.account_id === accountId) {
+        if (item?.account_id === accountId) {
           await env.INDEX.delete(key.name)
         }
       }),
@@ -30,7 +34,10 @@ export async function deleteAccountData(env: Env, accountId: string) {
   const keys = await stub.listKeys()
   await Promise.all(keys.map((key) => deleteApiKeyByHash(env, key.hash)))
   await stub.purge()
-  await deleteSessionsForAccount(env, accountId)
+  await Promise.all([
+    deleteIndexObjectsForAccount(env, "sess:", accountId),
+    deleteIndexObjectsForAccount(env, "cli-signin:", accountId),
+  ])
   return { deleted_keys: keys.length }
 }
 
