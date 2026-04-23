@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="4" y="4" width="56" height="56" rx="12" fill="#ffffff"/>
-  <text x="32" y="36" text-anchor="middle" dominant-baseline="central" font-size="45">🚰</text>
+  <rect width="64" height="64" rx="12" fill="#ffffff"/>
+  <path d="M32 10 L48 31 A16 16 0 1 1 16 31 Z" fill="#0052ff"/>
 </svg>
