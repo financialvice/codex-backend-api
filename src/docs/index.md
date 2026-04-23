@@ -334,4 +334,4 @@ This works because traffic goes to `chatfaucet.com` (a Worker) — not `chatgpt.
 
 Your ChatGPT OAuth tokens are stored in a per-user Durable Object. When a request comes in with your API key, we refresh your ChatGPT access token if needed and forward to `chatgpt.com/backend-api/codex/*` through a thin Fly-hosted proxy.
 
-Code: [github.com/financialvice/codex-backend-api](https://github.com/financialvice/codex-backend-api)
+Code: [github.com/financialvice/chatfaucet](https://github.com/financialvice/chatfaucet)

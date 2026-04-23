@@ -1,5 +1,5 @@
 {
-  "name": "codex-backend-api-proxy",
+  "name": "chatfaucet-proxy",
   "version": "0.0.0",
   "private": true,
   "type": "module",

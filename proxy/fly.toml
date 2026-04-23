@@ -1,4 +1,4 @@
-app = "codex-backend-api-proxy"
+app = "chatfaucet-proxy"
 primary_region = "sjc"
 
 [build]

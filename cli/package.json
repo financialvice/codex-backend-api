@@ -15,11 +15,11 @@
   "homepage": "https://chatfaucet.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/financialvice/codex-backend-api.git",
+    "url": "git+https://github.com/financialvice/chatfaucet.git",
     "directory": "cli"
   },
   "bugs": {
-    "url": "https://github.com/financialvice/codex-backend-api/issues"
+    "url": "https://github.com/financialvice/chatfaucet/issues"
   },
   "license": "MIT",
   "keywords": [

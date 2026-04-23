@@ -59,4 +59,4 @@ Bun.serve({
   },
 })
 
-console.log(`codex-backend-api proxy listening on :${process.env.PORT ?? 8080}`)
+console.log(`chatfaucet proxy listening on :${process.env.PORT ?? 8080}`)

@@ -34,10 +34,7 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url)
     const p = url.pathname
-    if (
-      url.hostname === "codex-backend-api.com" ||
-      url.hostname === `www.${env.APP_HOSTNAME}`
-    ) {
+    if (url.hostname === `www.${env.APP_HOSTNAME}`) {
       url.hostname = env.APP_HOSTNAME
       return Response.redirect(url.toString(), 308)
     }

@@ -6,7 +6,6 @@ import { join } from "node:path"
 const HOST = process.env.CHATFAUCET_HOST || "chatfaucet.com"
 const BASE = `https://${HOST}`
 const CONFIG = join(homedir(), ".chatfaucet.json")
-const LEGACY_CONFIG = join(homedir(), ".codex-backend-api.json")
 const AUTH_JSON = join(homedir(), ".codex", "auth.json")
 
 interface Config {
@@ -21,12 +20,11 @@ interface LoginResult extends Config {
 }
 
 async function readConfig(): Promise<Config | null> {
-  for (const path of [CONFIG, LEGACY_CONFIG]) {
-    try {
-      return JSON.parse(await readFile(path, "utf8")) as Config
-    } catch {}
+  try {
+    return JSON.parse(await readFile(CONFIG, "utf8")) as Config
+  } catch {
+    return null
   }
-  return null
 }
 
 async function readCredentials(): Promise<{
@@ -37,8 +35,8 @@ async function readCredentials(): Promise<{
   const c = await readConfig()
   if (c?.api_key) return c
 
-  const apiKey = process.env.CHATFAUCET_API_KEY || process.env.CBA_API_KEY
-  const baseUrl = process.env.CHATFAUCET_BASE_URL || process.env.CBA_BASE_URL
+  const apiKey = process.env.CHATFAUCET_API_KEY
+  const baseUrl = process.env.CHATFAUCET_BASE_URL
   if (!apiKey || !baseUrl) return null
   return {
     api_key: apiKey,

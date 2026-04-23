@@ -248,7 +248,7 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
         <RowSpaceBetween>
           <a href="/docs">docs</a>
           <a
-            href="https://github.com/financialvice/codex-backend-api"
+            href="https://github.com/financialvice/chatfaucet"
             target="_blank"
             rel="noopener noreferrer"
           >
