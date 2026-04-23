@@ -1,12 +1,23 @@
 #!/usr/bin/env bun
 import { readFile, writeFile, mkdir, rm } from "node:fs/promises"
-import { homedir } from "node:os"
+import { homedir, platform } from "node:os"
 import { join } from "node:path"
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
+import { randomBytes, createHash } from "node:crypto"
+import { spawn } from "node:child_process"
 
 const HOST = process.env.CHATFAUCET_HOST || "chatfaucet.com"
 const BASE = `https://${HOST}`
 const CONFIG = join(homedir(), ".chatfaucet.json")
 const AUTH_JSON = join(homedir(), ".codex", "auth.json")
+
+const CODEX_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
+const CODEX_ISSUER = "https://auth.openai.com"
+const CALLBACK_HOST = process.env.CHATFAUCET_CALLBACK_HOST || "127.0.0.1"
+const CALLBACK_PORT = 1455
+const CALLBACK_PATH = "/auth/callback"
+const REDIRECT_URI = `http://localhost:${CALLBACK_PORT}${CALLBACK_PATH}`
+const SCOPE = "openid profile email offline_access"
 
 interface Config {
   base_url: string
@@ -72,69 +83,205 @@ async function readAuthJson(): Promise<{
   }
 }
 
+function base64url(bytes: Buffer): string {
+  return bytes
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")
+}
+
+function generatePkce(): { verifier: string; challenge: string; state: string } {
+  const verifier = base64url(randomBytes(32))
+  const challenge = base64url(createHash("sha256").update(verifier).digest())
+  const state = randomBytes(16).toString("hex")
+  return { verifier, challenge, state }
+}
+
+function buildAuthorizeUrl(challenge: string, state: string): string {
+  const url = new URL(`${CODEX_ISSUER}/oauth/authorize`)
+  url.searchParams.set("response_type", "code")
+  url.searchParams.set("client_id", CODEX_CLIENT_ID)
+  url.searchParams.set("redirect_uri", REDIRECT_URI)
+  url.searchParams.set("scope", SCOPE)
+  url.searchParams.set("code_challenge", challenge)
+  url.searchParams.set("code_challenge_method", "S256")
+  url.searchParams.set("state", state)
+  url.searchParams.set("id_token_add_organizations", "true")
+  url.searchParams.set("codex_cli_simplified_flow", "true")
+  url.searchParams.set("originator", "chatfaucet")
+  return url.toString()
+}
+
+function openBrowser(url: string): void {
+  const plat = platform()
+  const cmd = plat === "darwin" ? "open" : plat === "win32" ? "start" : "xdg-open"
+  try {
+    spawn(cmd, [url], { detached: true, stdio: "ignore" }).unref()
+  } catch {
+    // ignore — user can click the printed URL
+  }
+}
+
+const SUCCESS_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Chat Faucet — signed in</title><style>html,body{margin:0;padding:0;background:#0b0b0b;color:#eaeaea;font-family:ui-monospace,Menlo,Monaco,monospace}main{max-width:480px;margin:6rem auto;padding:0 1.25rem;line-height:1.55}h1{font-size:1.05rem;font-weight:600;letter-spacing:-0.01em;margin:0 0 0.75rem}p{font-size:0.95rem;opacity:0.8;margin:0 0 0.5rem}code{background:rgba(255,255,255,0.08);padding:0.1em 0.35em;border-radius:3px}</style></head><body><main><h1>Signed in to Chat Faucet</h1><p>You can close this tab and return to your terminal.</p></main></body></html>`
+
+const ERROR_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Chat Faucet — sign-in failed</title><style>html,body{margin:0;padding:0;background:#0b0b0b;color:#eaeaea;font-family:ui-monospace,Menlo,Monaco,monospace}main{max-width:480px;margin:6rem auto;padding:0 1.25rem;line-height:1.55}h1{font-size:1.05rem;font-weight:600;letter-spacing:-0.01em;margin:0 0 0.75rem;color:#ff8e8e}p{font-size:0.95rem;opacity:0.8;margin:0 0 0.5rem}</style></head><body><main><h1>Sign-in failed</h1><p>Close this tab, return to your terminal, and run <code>bunx chatfaucet login</code> again.</p></main></body></html>`
+
+async function waitForCallback(state: string): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    let settled = false
+    const finish = (err: Error | null, code?: string) => {
+      if (settled) return
+      settled = true
+      server.close()
+      if (err) reject(err)
+      else resolve(code!)
+    }
+    const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+      const parsed = new URL(req.url || "/", `http://localhost:${CALLBACK_PORT}`)
+      if (parsed.pathname !== CALLBACK_PATH) {
+        res.statusCode = 404
+        res.setHeader("content-type", "text/plain; charset=utf-8")
+        res.end("not found")
+        return
+      }
+      const code = parsed.searchParams.get("code")
+      const gotState = parsed.searchParams.get("state")
+      if (!code || gotState !== state) {
+        res.statusCode = 400
+        res.setHeader("content-type", "text/html; charset=utf-8")
+        res.end(ERROR_HTML)
+        finish(new Error("state mismatch or missing code in callback"))
+        return
+      }
+      res.statusCode = 200
+      res.setHeader("content-type", "text/html; charset=utf-8")
+      res.end(SUCCESS_HTML)
+      finish(null, code)
+    })
+    server.on("error", (e: NodeJS.ErrnoException) => {
+      if (e.code === "EADDRINUSE") {
+        finish(
+          new Error(
+            `port ${CALLBACK_PORT} is in use (likely the Codex or Pi CLI). Close that process and rerun \`chatfaucet login\`.`,
+          ),
+        )
+      } else {
+        finish(e)
+      }
+    })
+    server.listen(CALLBACK_PORT, CALLBACK_HOST)
+  })
+}
+
+async function exchangeCode(
+  code: string,
+  verifier: string,
+): Promise<{
+  access_token: string
+  refresh_token: string
+  id_token: string
+}> {
+  const r = await fetch(`${CODEX_ISSUER}/oauth/token`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: CODEX_CLIENT_ID,
+      code,
+      code_verifier: verifier,
+      redirect_uri: REDIRECT_URI,
+    }),
+  })
+  if (!r.ok) throw new Error(`token exchange failed: ${r.status} ${await r.text()}`)
+  const j = (await r.json()) as {
+    access_token?: string
+    refresh_token?: string
+    id_token?: string
+  }
+  if (!j.access_token || !j.refresh_token || !j.id_token) {
+    throw new Error("token response missing access/refresh/id token")
+  }
+  return {
+    access_token: j.access_token,
+    refresh_token: j.refresh_token,
+    id_token: j.id_token,
+  }
+}
+
+function decodeJwt(jwt: string): Record<string, unknown> {
+  const parts = jwt.split(".")
+  if (parts.length < 2) return {}
+  const padded = parts[1]! + "=".repeat((4 - (parts[1]!.length % 4)) % 4)
+  try {
+    const bytes = Buffer.from(
+      padded.replace(/-/g, "+").replace(/_/g, "/"),
+      "base64",
+    ).toString("utf8")
+    return JSON.parse(bytes) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+function extractAccountId(idToken: string): string {
+  const claims = decodeJwt(idToken) as {
+    "https://api.openai.com/auth"?: { chatgpt_account_id?: string }
+    chatgpt_account_id?: string
+    organizations?: Array<{ id: string }>
+  }
+  return (
+    claims["https://api.openai.com/auth"]?.chatgpt_account_id ??
+    claims.chatgpt_account_id ??
+    claims.organizations?.[0]?.id ??
+    ""
+  )
+}
+
 async function uploadTokens(
-  tokens: Awaited<ReturnType<typeof readAuthJson>>,
+  tokens: {
+    refresh_token: string
+    id_token: string
+    access_token: string
+    account_id: string
+  },
   name: string,
 ): Promise<LoginResult> {
-  if (!tokens) throw new Error("no tokens")
   const r = await fetch(`${BASE}/api/cli/upload-tokens`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      refresh_token: tokens.refresh_token,
-      id_token: tokens.id_token,
-      access_token: tokens.access_token,
-      account_id: tokens.account_id,
-      key_name: name,
-    }),
+    body: JSON.stringify({ ...tokens, key_name: name }),
   })
   if (!r.ok) throw new Error(`upload-tokens failed: ${r.status} ${await r.text()}`)
   return (await r.json()) as LoginResult
 }
 
-async function deviceFlow(name: string): Promise<LoginResult> {
-  const start = await fetch(`${BASE}/api/cli/device-start`, { method: "POST" })
-  if (!start.ok) throw new Error(`device-start: ${start.status}`)
-  const d = (await start.json()) as {
-    device_auth_id: string
-    user_code: string
-    interval: number
-    verification_uri_complete: string
-  }
+async function browserFlow(name: string): Promise<LoginResult> {
+  const { verifier, challenge, state } = generatePkce()
+  const authUrl = buildAuthorizeUrl(challenge, state)
+  const waitPromise = waitForCallback(state)
+  // Small delay so the server is bound before we tell the user to navigate.
+  await new Promise((r) => setTimeout(r, 50))
+
   console.log("")
-  console.log("  Open this URL in your browser to authorize:")
-  console.log(`  ${d.verification_uri_complete}`)
-  console.log("")
-  console.log(`  Or enter code: ${d.user_code}`)
+  console.log("  Opening your browser to sign in with ChatGPT…")
+  console.log(`  If it doesn't open, visit: ${authUrl}`)
   console.log("")
   console.log("  Waiting for authorization…")
-  const deadline = Date.now() + 15 * 60 * 1000
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, d.interval * 1000))
-    const r = await fetch(`${BASE}/api/cli/device-poll`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        device_auth_id: d.device_auth_id,
-        user_code: d.user_code,
-        key_name: name,
-      }),
-    })
-    const j = (await r.json()) as
-      | { status: "pending" }
-      | { status: "error"; error: string }
-      | {
-          status: "success"
-          email: string | null
-          base_url: string
-          api_key: string
-          key_id: string
-          sign_in_url?: string
-        }
-    if (j.status === "success") return j
-    if (j.status === "error") throw new Error(j.error)
-  }
-  throw new Error("authorization timed out")
+  openBrowser(authUrl)
+
+  const code = await waitPromise
+  const exchanged = await exchangeCode(code, verifier)
+  const accountId = extractAccountId(exchanged.id_token)
+  return uploadTokens(
+    {
+      refresh_token: exchanged.refresh_token,
+      id_token: exchanged.id_token,
+      access_token: exchanged.access_token,
+      account_id: accountId,
+    },
+    name,
+  )
 }
 
 function getArg(args: string[], flag: string): string | undefined {
@@ -158,14 +305,14 @@ async function cmdLogin(args: string[]) {
       try {
         login = await uploadTokens(tokens, name)
       } catch (e) {
-        console.log(`Token upload failed (${String(e)}); falling back to device login.`)
-        login = await deviceFlow(name)
+        console.log(`Token upload failed (${String(e)}); falling back to browser sign-in.`)
+        login = await browserFlow(name)
       }
     } else {
-      login = await deviceFlow(name)
+      login = await browserFlow(name)
     }
   } else {
-    login = await deviceFlow(name)
+    login = await browserFlow(name)
   }
   const cfg: Config = {
     base_url: login.base_url,
@@ -256,7 +403,6 @@ Usage:
 Env:
   CHATFAUCET_HOST   Override the gateway host (default: chatfaucet.com)
   CHATFAUCET_API_KEY and CHATFAUCET_BASE_URL can be used for headless API-key commands
-  CBA_API_KEY and CBA_BASE_URL are still accepted as legacy aliases
 `)
 }
 

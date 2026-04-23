@@ -52,7 +52,7 @@ bunx chatfaucet login --name agent
 eval "$(bunx chatfaucet env)"
 ```
 
-If the CLI asks for browser authorization, open the printed URL or approve the printed device code. After login, the CLI prints a one-time `Sign-in link:` for the web dashboard. Agents should include that exact full URL in their final answer so the user can open the GUI already signed in.
+If the CLI asks for browser authorization, open the printed URL — it runs a local callback on `http://127.0.0.1:1455` and the sign-in completes automatically. After login, the CLI prints a one-time `Sign-in link:` for the web dashboard. Agents should include that exact full URL in their final answer so the user can open the GUI already signed in.
 
 Verify the gateway headlessly:
 
@@ -118,10 +118,10 @@ curl https://chatfaucet.com/v1/usage \
 ```bash
 bunx chatfaucet login
 bunx chatfaucet login --name "laptop"
-bunx chatfaucet login --no-read-auth-json   # skip auth.json, do device flow
+bunx chatfaucet login --no-read-auth-json   # skip auth.json, force browser sign-in
 ```
 
-By default `login` reads `~/.codex/auth.json` (the file the official Codex CLI writes) and uploads those tokens. If that file doesn't exist, it falls back to the ChatGPT device-code flow in your terminal. On success it prints your API key and saves config to `~/.chatfaucet.json`.
+By default `login` reads `~/.codex/auth.json` (the file the official Codex CLI writes) and uploads those tokens. If that file doesn't exist, it opens your browser to sign in with ChatGPT and completes the OAuth handshake via a local callback on `http://127.0.0.1:1455` — no codes to copy. On success it prints your API key and saves config to `~/.chatfaucet.json`.
 
 `login` also prints a one-time dashboard sign-in link. Open it in a browser to land in the web UI with a normal session cookie. The link expires after 15 minutes and can be used once.
 

@@ -10,12 +10,7 @@ import {
 } from "./routes-auth"
 import { listKeys, createKey, revokeKey } from "./routes-keys"
 import { handleResponses, handleModels, handleUsage } from "./routes-v1"
-import {
-  cliUploadTokens,
-  cliDeviceStart,
-  cliDevicePoll,
-  cliBrowserSignIn,
-} from "./routes-cli"
+import { cliUploadTokens, cliBrowserSignIn } from "./routes-cli"
 import {
   deleteAccountByApiKey,
   deleteAccountBySession,
@@ -90,10 +85,6 @@ export default {
 
     if (p === "/api/cli/upload-tokens" && request.method === "POST")
       return cliUploadTokens(request, env)
-    if (p === "/api/cli/device-start" && request.method === "POST")
-      return cliDeviceStart(request, env)
-    if (p === "/api/cli/device-poll" && request.method === "POST")
-      return cliDevicePoll(request, env)
     const cliSignInMatch = p.match(/^\/api\/cli\/sign-in\/([^/]+)$/)
     if (cliSignInMatch && request.method === "GET")
       return cliBrowserSignIn(cliSignInMatch[1]!, env)

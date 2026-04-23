@@ -5,7 +5,7 @@ import {
   refreshWithCodex,
   type StoredTokens,
 } from "./codex-auth"
-import { upsertAccount, devicePollOnce, deviceStart } from "./signin"
+import { upsertAccount } from "./signin"
 import {
   consumeCliSignInToken,
   createCliSignInToken,
@@ -105,7 +105,7 @@ export async function cliUploadTokens(
   const newRefreshToken = refreshed.refresh_token ?? body.refresh_token
   const newIdToken = refreshed.id_token
   if (!newIdToken) {
-    return error("refresh did not return an id_token; use device login", 400)
+    return error("refresh did not return an id_token; run `chatfaucet login` again", 400)
   }
 
   const accountId = extractAccountId(newIdToken)
@@ -126,50 +126,6 @@ export async function cliUploadTokens(
     up.accountId,
     up.email,
     (body.key_name ?? "cli").slice(0, 64) || "cli",
-  )
-}
-
-export async function cliDeviceStart(
-  req: Request,
-  env: Env,
-): Promise<Response> {
-  const limited = await rateLimit(env, req, "cli-device-start", 20, 60)
-  if (limited) return limited
-  return deviceStart()
-}
-
-export async function cliDevicePoll(
-  req: Request,
-  env: Env,
-): Promise<Response> {
-  const limited = await rateLimit(env, req, "cli-device-poll", 120, 60)
-  if (limited) return limited
-  const badJson = requireJson(req)
-  if (badJson) return badJson
-
-  const input = (await req.json().catch(() => null)) as {
-    device_auth_id: string
-    user_code: string
-    key_name?: string
-  } | null
-  if (
-    !input ||
-    typeof input.device_auth_id !== "string" ||
-    typeof input.user_code !== "string"
-  ) {
-    return error("device_auth_id and user_code required", 400)
-  }
-
-  const r = await devicePollOnce(input)
-  if (r.status !== "success") {
-    return json(r, r.status === "error" ? 500 : 200)
-  }
-  const up = await upsertAccount(env, r.tokens!, r.email ?? null)
-  return finishCliAuth(
-    env,
-    up.accountId,
-    up.email,
-    (input.key_name ?? "cli").slice(0, 64) || "cli",
   )
 }
 
