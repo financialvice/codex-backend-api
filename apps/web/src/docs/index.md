@@ -13,7 +13,7 @@ https://chatfaucet.com
 That base URL exposes these endpoints:
 
 ```text
-POST /v1/responses   OpenAI Responses API (streaming SSE or JSON)
+POST /v1/responses   OpenAI Responses API (streaming SSE)
 GET  /v1/models      Available models
 GET  /v1/usage       Your ChatGPT-plan quota
 DELETE /v1/account   Delete your account and all stored data
