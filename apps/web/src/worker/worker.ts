@@ -14,6 +14,7 @@ import {
   cliBrowserSignIn,
   cliCreateKey,
   cliExistingLogin,
+  cliListKeys,
   cliUploadTokens,
 } from "./routes-cli";
 import { getDoc, listDocs } from "./routes-docs";
@@ -83,6 +84,8 @@ function handleApi(
     return cliUploadTokens(request, env);
   if (p === "/api/cli/existing-login" && request.method === "POST")
     return cliExistingLogin(request, env);
+  if (p === "/api/cli/keys" && request.method === "GET")
+    return cliListKeys(request, env);
   if (p === "/api/cli/keys" && request.method === "POST")
     return cliCreateKey(request, env);
   const cliSignInMatch = p.match(/^\/api\/cli\/sign-in\/([^/]+)$/);

@@ -40,6 +40,19 @@ interface ExistingLoginResult {
   sign_in_url?: string;
 }
 
+interface KeyListResult {
+  active_key_id: string;
+  email: string | null;
+  keys: Array<{
+    created_at: number;
+    id: string;
+    last_used_at: number | null;
+    name: string;
+    prefix: string;
+    revoked_at: number | null;
+  }>;
+}
+
 async function readConfig(): Promise<Config | null> {
   try {
     return JSON.parse(await readFile(CONFIG, "utf8")) as Config;
@@ -449,19 +462,32 @@ async function cmdEnv() {
 }
 
 async function cmdKeysList() {
-  const c = await readCredentials();
+  const c = await readConfig();
   if (!c) {
     throw new Error("not logged in — run `chatfaucet login`");
   }
-  const r = await fetch(`${c.base_url}/v1/usage`, {
+  const r = await fetch(`${c.base_url}/api/cli/keys`, {
     headers: { Authorization: `Bearer ${c.api_key}` },
   });
-  console.log(
-    `Logged in as ${c.email}. Active key: ${c.api_key.slice(0, 12)}…`
-  );
+  if (!r.ok) {
+    throw new Error(`keys failed: ${r.status} ${await r.text()}`);
+  }
+  const body = (await r.json()) as KeyListResult;
+  console.log(`Logged in as ${body.email ?? c.email ?? "(email unknown)"}`);
+  console.log("");
+  for (const key of body.keys) {
+    const active = key.id === body.active_key_id ? " *" : "";
+    const status = key.revoked_at ? "revoked" : "active";
+    const used = key.last_used_at
+      ? new Date(key.last_used_at * 1000).toISOString()
+      : "never";
+    console.log(
+      `${key.prefix}…  ${key.name}  ${status}${active}  last_used=${used}`
+    );
+  }
+  console.log("");
+  console.log(`* marks the key saved in ${CONFIG}`);
   console.log(`Manage keys at ${c.base_url}/`);
-  console.log(`Usage (/v1/usage): ${r.status}`);
-  console.log(await r.text());
 }
 
 async function cmdLogout() {

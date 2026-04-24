@@ -36,6 +36,17 @@ function getStub(env: Env, accountId: string) {
   return env.ACCOUNT_DO.get(id);
 }
 
+function publicKey(k: ApiKey) {
+  return {
+    id: k.id,
+    name: k.name,
+    prefix: k.prefix,
+    created_at: k.created_at,
+    last_used_at: k.last_used_at,
+    revoked_at: k.revoked_at,
+  };
+}
+
 async function authCliKey(
   req: Request,
   env: Env
@@ -162,6 +173,28 @@ export async function cliCreateKey(req: Request, env: Env): Promise<Response> {
     api_key: key.key,
     key_id: key.id,
     sign_in_url: `https://${env.APP_HOSTNAME}${CLI_SIGN_IN_PREFIX}${signInToken}`,
+  });
+}
+
+export async function cliListKeys(req: Request, env: Env): Promise<Response> {
+  const auth = await authCliKey(req, env);
+  if (auth instanceof Response) return auth;
+  const limited = await rateLimit(
+    env,
+    req,
+    "cli-list-keys",
+    60,
+    60,
+    auth.accountId
+  );
+  if (limited) return limited;
+
+  const stub = getStub(env, auth.accountId);
+  const [meta, keys] = await Promise.all([stub.getMeta(), stub.listKeys()]);
+  return json({
+    email: meta?.email ?? null,
+    active_key_id: auth.keyId,
+    keys: keys.map(publicKey),
   });
 }
 
