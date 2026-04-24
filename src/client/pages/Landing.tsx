@@ -231,50 +231,6 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
           </>
         )}
       </Card>
-
-      <div style={{ height: "1rem" }} />
-
-      <div
-        style={{
-          marginTop: "1rem",
-          opacity: 0.6,
-          fontSize: "0.875em",
-          lineHeight: "calc(var(--theme-line-height-base) * 1.2em)",
-        }}
-      >
-        by{" "}
-        <a
-          href="https://x.com/financialvice"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          cam
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://x.com/anupambatra_"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          anupam
-        </a>{" "}
-        |{" "}
-        <a
-          href="https://www.dubdubdub.xyz/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          dubdubdub labs
-        </a>{" "}
-        | components by{" "}
-        <a
-          href="https://www.sacred.computer/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          sacred.computer
-        </a>
-      </div>
     </Window>
   )
 }
