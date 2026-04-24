@@ -15,6 +15,8 @@ export const queryClient = new QueryClient({
 })
 
 export const persister = createAsyncStoragePersister({
+  // Safe to persist: the dashboard cache contains auth status, usage, and API
+  // key metadata only. Plaintext API keys are never stored in React Query.
   storage: {
     getItem: async (key: string) => (await idbGet<string>(key)) ?? null,
     setItem: async (key: string, value: string) => {

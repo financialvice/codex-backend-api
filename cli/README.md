@@ -30,7 +30,7 @@ npx chatfaucet login
 ## Commands
 
 ```sh
-chatfaucet login [--name <label>] [--no-read-auth-json]
+chatfaucet login [--name <label>] [-y] [--no-read-auth-json]
 chatfaucet env
 chatfaucet keys
 chatfaucet logout
@@ -42,3 +42,5 @@ chatfaucet --help
 
 - `CHATFAUCET_HOST` overrides the gateway host.
 - `CHATFAUCET_API_KEY` and `CHATFAUCET_BASE_URL` can be used for headless API-key commands.
+
+`-y` confirms uploading tokens from `~/.codex/auth.json` when that file is present. Agents should only use it after the user has clearly confirmed.

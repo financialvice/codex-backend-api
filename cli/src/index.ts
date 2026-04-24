@@ -5,6 +5,7 @@ import { join } from "node:path"
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import { randomBytes, createHash } from "node:crypto"
 import { spawn } from "node:child_process"
+import { createInterface } from "node:readline/promises"
 
 const HOST = process.env.CHATFAUCET_HOST || "chatfaucet.com"
 const BASE = `https://${HOST}`
@@ -297,15 +298,22 @@ function hasFlag(args: string[], flag: string): boolean {
 async function cmdLogin(args: string[]) {
   const name = getArg(args, "--name") ?? "cli"
   const noAuthJson = hasFlag(args, "--no-read-auth-json")
+  const assumeYes = hasFlag(args, "-y") || hasFlag(args, "--yes")
   let login: LoginResult
   if (!noAuthJson) {
     const tokens = await readAuthJson()
     if (tokens) {
-      console.log(`Found ~/.codex/auth.json — uploading tokens…`)
-      try {
-        login = await uploadTokens(tokens, name)
-      } catch (e) {
-        console.log(`Token upload failed (${String(e)}); falling back to browser sign-in.`)
+      const ok = await confirmAuthJsonUpload(assumeYes)
+      if (ok) {
+        console.log(`Found ~/.codex/auth.json — uploading tokens…`)
+        try {
+          login = await uploadTokens(tokens, name)
+        } catch (e) {
+          console.log(`Token upload failed (${String(e)}); falling back to browser sign-in.`)
+          login = await browserFlow(name)
+        }
+      } else {
+        console.log("Okay — using browser sign-in instead.")
         login = await browserFlow(name)
       }
     } else {
@@ -335,6 +343,27 @@ async function cmdLogin(args: string[]) {
   console.log(`  Saved to ${CONFIG}`)
   console.log("")
   console.log("  Run `chatfaucet env` to get shell exports.")
+}
+
+async function confirmAuthJsonUpload(assumeYes: boolean): Promise<boolean> {
+  if (assumeYes) return true
+
+  console.log("")
+  console.log("  Found ~/.codex/auth.json.")
+  console.log(
+    "  Chat Faucet can use it to sign you in without opening a browser. This sends your ChatGPT OAuth tokens to Chat Faucet so the gateway can refresh requests for you.",
+  )
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+  try {
+    const answer = await rl.question("  Continue with this token upload? [y/N] ")
+    return /^(y|yes)$/i.test(answer.trim())
+  } finally {
+    rl.close()
+  }
 }
 
 async function cmdEnv() {
@@ -393,7 +422,7 @@ function help() {
   console.log(`Chat Faucet — your ChatGPT plan as an OpenAI-compatible Responses API
 
 Usage:
-  chatfaucet login [--name <label>] [--no-read-auth-json]
+  chatfaucet login [--name <label>] [-y] [--no-read-auth-json]
   chatfaucet env
   chatfaucet keys
   chatfaucet logout
