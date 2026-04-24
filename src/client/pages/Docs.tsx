@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import Window from "../srcl/components/Window"
 import Card from "../srcl/components/Card"
 import Button from "../srcl/components/Button"
@@ -17,24 +18,23 @@ const TOC: { slug: string; label: string }[] = [
 ]
 
 export function Docs({ path, signedIn }: { path: string; signedIn: boolean }) {
-  const [md, setMd] = useState<string | null>(null)
-  const [err, setErr] = useState<string | null>(null)
   const [pageCopied, setPageCopied] = useState(false)
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    document.title = "docs — Chat Faucet"
-  }, [])
+  const { data: md, error } = useQuery({
+    queryKey: ["docs", "index"],
+    queryFn: async () => {
+      const r = await fetch("/api/docs/index")
+      if (!r.ok) throw new Error(`${r.status}`)
+      return r.text()
+    },
+    staleTime: 5 * 60_000,
+  })
+  const err = error ? String(error) : null
 
   useEffect(() => {
-    fetch("/api/docs/index")
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`${r.status}`)
-        return r.text()
-      })
-      .then(setMd)
-      .catch((e) => setErr(String(e)))
+    document.title = "docs — Chat Faucet"
   }, [])
 
   useEffect(() => {

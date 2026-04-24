@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   del,
   getJson,
@@ -6,6 +7,7 @@ import {
   type ApiKeyPublic,
   type AuthStatus,
 } from "../lib/api"
+import { persister } from "../lib/queryClient"
 import Window from "../srcl/components/Window"
 import Card from "../srcl/components/Card"
 import Button from "../srcl/components/Button"
@@ -17,13 +19,10 @@ import RowSpaceBetween from "../srcl/components/RowSpaceBetween"
 import { ThemeToggle } from "../srcl/theme"
 
 export function Dashboard({ status }: { status: AuthStatus }) {
-  const [keys, setKeys] = useState<ApiKeyPublic[] | null>(null)
+  const queryClient = useQueryClient()
   const [newKey, setNewKey] = useState<string | null>(null)
   const [newKeyName, setNewKeyName] = useState<string | null>(null)
   const [name, setName] = useState("")
-  const [usage, setUsage] = useState<unknown>(null)
-  const [usageErr, setUsageErr] = useState<string | null>(null)
-  const [keysErr, setKeysErr] = useState<string | null>(null)
   const [actionErr, setActionErr] = useState<string | null>(null)
   const [revokingKey, setRevokingKey] = useState<ApiKeyPublic | null>(null)
   const [copiedKey, setCopiedKey] = useState(false)
@@ -36,37 +35,31 @@ export function Dashboard({ status }: { status: AuthStatus }) {
 
   const baseUrl = window.location.origin
 
+  const { data: keysData, error: keysErrorObj } = useQuery({
+    queryKey: ["api-keys"],
+    queryFn: () => getJson<{ keys: ApiKeyPublic[] }>("/api/keys"),
+    staleTime: 30_000,
+  })
+  const keys = keysData?.keys ?? null
+  const keysErr = keysErrorObj ? messageFromError(keysErrorObj) : null
+
+  const {
+    data: usage,
+    error: usageErrorObj,
+    refetch: refetchUsage,
+  } = useQuery({
+    queryKey: ["usage"],
+    queryFn: async () => {
+      const r = await fetch("/api/usage", { credentials: "include" })
+      if (!r.ok) throw new Error(`${r.status} ${await r.text()}`)
+      return (await r.json()) as unknown
+    },
+    staleTime: 30_000,
+  })
+  const usageErr = usageErrorObj ? String(usageErrorObj) : null
+
   useEffect(() => {
     document.title = "dashboard — Chat Faucet"
-  }, [])
-
-  async function refresh() {
-    try {
-      const r = await getJson<{ keys: ApiKeyPublic[] }>("/api/keys")
-      setKeys(r.keys)
-      setKeysErr(null)
-    } catch (e) {
-      setKeysErr(messageFromError(e))
-    }
-  }
-
-  async function refreshUsage() {
-    try {
-      const r = await fetch("/api/usage", { credentials: "include" })
-      if (!r.ok) {
-        setUsageErr(`${r.status} ${await r.text()}`)
-        return
-      }
-      setUsage(await r.json())
-      setUsageErr(null)
-    } catch (e) {
-      setUsageErr(String(e))
-    }
-  }
-
-  useEffect(() => {
-    refresh()
-    refreshUsage()
     nameInputRef.current?.focus()
   }, [])
 
@@ -112,7 +105,7 @@ export function Dashboard({ status }: { status: AuthStatus }) {
       setNewKey(r.key)
       setNewKeyName(r.name)
       setName("")
-      refresh()
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] })
       setTimeout(() => nameInputRef.current?.focus(), 0)
     } catch (e) {
       setActionErr(`Couldn't create key: ${messageFromError(e)}`)
@@ -133,7 +126,7 @@ export function Dashboard({ status }: { status: AuthStatus }) {
       setActionErr(null)
       await del(`/api/keys/${id}`)
       setRevokingKey(null)
-      refresh()
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] })
     } catch (e) {
       setActionErr(`Couldn't revoke key: ${messageFromError(e)}`)
       setRevokingKey(null)
@@ -144,6 +137,8 @@ export function Dashboard({ status }: { status: AuthStatus }) {
     try {
       setActionErr(null)
       await postJson("/api/auth/sign-out")
+      queryClient.clear()
+      await persister.removeClient()
       window.location.href = "/"
     } catch (e) {
       setActionErr(`Couldn't sign out: ${messageFromError(e)}`)
@@ -153,6 +148,8 @@ export function Dashboard({ status }: { status: AuthStatus }) {
   async function deleteAccount() {
     try {
       await del("/api/account")
+      queryClient.clear()
+      await persister.removeClient()
       window.location.href = "/"
     } catch (e) {
       setDeleteAccountErr(e instanceof Error ? e.message : String(e))
@@ -379,7 +376,7 @@ Authorization: Bearer <your api key>`}</pre>
           <span style={{ opacity: 0.7 }}>ChatGPT-plan quota</span>
           <button
             type="button"
-            onClick={refreshUsage}
+            onClick={() => refetchUsage()}
             style={linkButtonStyle}
           >
             refresh

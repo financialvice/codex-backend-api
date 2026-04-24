@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useIsRestoring, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Landing } from "./pages/Landing"
 import { Dashboard } from "./pages/Dashboard"
 import { Docs } from "./pages/Docs"
@@ -8,14 +9,21 @@ import { PageShell } from "./srcl/PageShell"
 import BlockLoader from "./srcl/components/BlockLoader"
 
 export function App() {
-  const [status, setStatus] = useState<AuthStatus | null>(null)
   const [path, setPath] = useState(window.location.pathname)
+  const queryClient = useQueryClient()
+  const isRestoring = useIsRestoring()
 
-  useEffect(() => {
-    getJson<AuthStatus>("/api/auth/status")
-      .then(setStatus)
-      .catch(() => setStatus({ signedIn: false }))
-  }, [])
+  const { data: status, isPending } = useQuery({
+    queryKey: ["auth-status"],
+    queryFn: async () => {
+      try {
+        return await getJson<AuthStatus>("/api/auth/status")
+      } catch {
+        return { signedIn: false } as AuthStatus
+      }
+    },
+    staleTime: 5 * 60_000,
+  })
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname)
@@ -31,7 +39,7 @@ export function App() {
     )
   }
 
-  if (status == null) {
+  if (!status && (isRestoring || isPending)) {
     return (
       <PageShell>
         <span>
@@ -43,16 +51,14 @@ export function App() {
 
   return (
     <PageShell>
-      {status.signedIn && path === "/playground" ? (
+      {status?.signedIn && path === "/playground" ? (
         <Playground />
-      ) : status.signedIn ? (
+      ) : status?.signedIn ? (
         <Dashboard status={status} />
       ) : (
         <Landing
           onAuthed={() => {
-            getJson<AuthStatus>("/api/auth/status")
-              .then(setStatus)
-              .catch(() => setStatus({ signedIn: false }))
+            queryClient.invalidateQueries({ queryKey: ["auth-status"] })
           }}
         />
       )}

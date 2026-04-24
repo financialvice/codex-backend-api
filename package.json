@@ -15,8 +15,12 @@
     "@cloudflare/ai-chat": "^0.5.1",
     "@cloudflare/shell": "^0.3.3",
     "@cloudflare/think": "^0.4.0",
+    "@tanstack/query-async-storage-persister": "^5.100.1",
+    "@tanstack/react-query": "^5.100.1",
+    "@tanstack/react-query-persist-client": "^5.100.1",
     "agents": "^0.11.5",
     "ai": "^6.0.168",
+    "idb-keyval": "^6.2.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zod": "^4.3.6"
