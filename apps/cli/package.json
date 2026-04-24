@@ -1,6 +1,6 @@
 {
   "name": "chatfaucet",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "CLI for Chat Faucet — your ChatGPT plan as an OpenAI-compatible Responses API.",
   "type": "module",
   "bin": {
@@ -9,8 +9,14 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "bun build src/index.ts --target=node --outfile dist/index.js",
+    "check": "ultracite check",
+    "fix": "ultracite fix",
     "prepublishOnly": "bun run build"
   },
   "engines": {
