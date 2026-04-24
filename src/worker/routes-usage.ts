@@ -11,7 +11,7 @@ export async function sessionUsage(req: Request, env: Env): Promise<Response> {
   try {
     tokens = await stub.ensureFreshToken()
   } catch (e) {
-    return error(`token error: ${String(e)}`, 401)
+    return error("token refresh failed; sign in again", 401)
   }
 
   const r = await fetch(`${env.PROXY_URL}/wham/usage`, {

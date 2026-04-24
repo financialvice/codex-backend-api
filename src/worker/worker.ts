@@ -1,5 +1,5 @@
 import { routeAgentRequest } from "agents"
-import { AccountDO } from "./AccountDO"
+import { AccountDO, AccountDOEncrypted } from "./AccountDO"
 import { PlaygroundAgent } from "./PlaygroundAgent"
 import {
   authStatus,
@@ -19,7 +19,7 @@ import { sessionUsage } from "./routes-usage"
 import { listDocs, getDoc } from "./routes-docs"
 import { error, withSecurityHeaders } from "./util"
 
-export { AccountDO, PlaygroundAgent }
+export { AccountDO, AccountDOEncrypted, PlaygroundAgent }
 
 export default {
   async fetch(

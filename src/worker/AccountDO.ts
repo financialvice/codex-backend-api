@@ -4,6 +4,7 @@ import {
   refreshWithCodex,
   type StoredTokens,
 } from "./codex-auth"
+import { decryptJson, encryptJson } from "./token-crypto"
 
 const REFRESH_MARGIN_SECONDS = 300
 
@@ -79,12 +80,13 @@ export class AccountDO extends DurableObject<Env> {
   }
 
   async setTokens(tokens: StoredTokens): Promise<void> {
-    this.setKv("tokens", JSON.stringify(tokens))
+    this.setKv("tokens", await encryptJson(this.env.TOKEN_ENCRYPTION_KEY, tokens))
   }
 
   async getTokens(): Promise<StoredTokens | null> {
     const v = this.getKv("tokens")
-    return v ? (JSON.parse(v) as StoredTokens) : null
+    if (!v) return null
+    return decryptJson<StoredTokens>(this.env.TOKEN_ENCRYPTION_KEY, v)
   }
 
   async ensureFreshToken(): Promise<StoredTokens> {
@@ -156,3 +158,5 @@ export class AccountDO extends DurableObject<Env> {
     this.ctx.storage.sql.exec("DELETE FROM api_keys")
   }
 }
+
+export class AccountDOEncrypted extends AccountDO {}

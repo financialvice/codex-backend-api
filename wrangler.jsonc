@@ -19,7 +19,7 @@
     "bindings": [
       {
         "name": "ACCOUNT_DO",
-        "class_name": "AccountDO"
+        "class_name": "AccountDOEncrypted"
       },
       {
         "name": "PlaygroundAgent",
@@ -43,6 +43,14 @@
     {
       "tag": "v4",
       "new_sqlite_classes": ["PlaygroundAgent"]
+    },
+    {
+      "tag": "v5",
+      "new_sqlite_classes": ["AccountDOEncrypted"]
+    },
+    {
+      "tag": "v6",
+      "deleted_classes": ["AccountDO"]
     }
   ],
   "kv_namespaces": [

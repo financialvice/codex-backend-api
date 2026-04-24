@@ -98,7 +98,7 @@ export async function cliUploadTokens(
     (e) => e as Error,
   )
   if (refreshed instanceof Error) {
-    return error(`token refresh failed: ${refreshed.message}`, 400)
+    return error("token refresh failed", 400)
   }
 
   const newAccessToken = refreshed.access_token

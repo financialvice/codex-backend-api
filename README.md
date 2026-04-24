@@ -60,6 +60,7 @@ Cloudflare Workers can't reach `chatgpt.com/backend-api/*` (managed-challenge 40
 - Session-authenticated dashboard mutations require same-origin browser metadata; API endpoints use bearer API keys.
 - Basic KV-backed rate limits protect login, key creation, and `/v1/*` request paths. Tune these for your own deployment.
 - Keep `PROXY_SECRET` in Wrangler/Fly secrets only; don't commit it.
+- Keep `TOKEN_ENCRYPTION_KEY` in Wrangler secrets only; it encrypts stored OAuth tokens.
 
 ## Repo layout
 
@@ -107,6 +108,7 @@ Put the proxy secret in:
 
 ```
 bunx wrangler secret put PROXY_SECRET
+bunx wrangler secret put TOKEN_ENCRYPTION_KEY # use: openssl rand -hex 32
 ```
 
 Add a workers route for `*.yourdomain.com/*` → this worker in Cloudflare. Make sure wildcard DNS points at the worker.

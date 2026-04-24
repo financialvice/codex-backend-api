@@ -58,7 +58,7 @@ export async function refreshWithCodex(refreshToken: string): Promise<{
     }),
   })
   if (!r.ok) {
-    throw new Error(`codex refresh failed: ${r.status} ${await r.text()}`)
+    throw new Error(`codex refresh failed: ${r.status}`)
   }
   return (await r.json()) as {
     access_token: string
