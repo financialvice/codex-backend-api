@@ -1,6 +1,9 @@
 .row {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: calc(var(--theme-line-height-base) * 0.25rem) 2ch;
   outline: 0;
   border: 0;
 }

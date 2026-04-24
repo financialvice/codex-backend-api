@@ -2,6 +2,25 @@
   line-height: calc(var(--theme-line-height-base) * 1rem);
 }
 
+.rawRow {
+  gap: calc(var(--theme-line-height-base) * 0.5rem) 1ch;
+  align-items: center;
+}
+
+.rawButton {
+  width: 28ch;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .rawRow {
+    align-items: stretch;
+  }
+  .rawButton {
+    width: 100%;
+  }
+}
+
 .docs h1 {
   font-size: 1.25em;
   font-weight: 400;

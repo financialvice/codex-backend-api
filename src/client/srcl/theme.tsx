@@ -78,7 +78,9 @@ export function ThemeToggle() {
         fontFamily: "inherit",
       }}
     >
-      <span style={{ opacity: 0.7 }}>theme:</span>
+      <span className="theme-toggle-label" style={{ opacity: 0.7 }}>
+        theme:
+      </span>
       {ALL_THEMES.map((t) => {
         const active = theme === t
         return (

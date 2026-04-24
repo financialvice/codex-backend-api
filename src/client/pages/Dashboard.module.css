@@ -1,0 +1,35 @@
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2ch;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: calc(var(--theme-line-height-base) * 0.25rem);
+}
+
+.createRow {
+  gap: calc(var(--theme-line-height-base) * 0.5rem) 1ch;
+  align-items: stretch;
+}
+
+.createButton {
+  width: 24ch;
+  flex-shrink: 0;
+}
+
+.accountRow {
+  gap: calc(var(--theme-line-height-base) * 0.5rem) 2ch;
+}
+
+@media (max-width: 560px) {
+  .headerActions {
+    gap: 1.5ch;
+  }
+  .createRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .createButton {
+    width: 100%;
+  }
+}

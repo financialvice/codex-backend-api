@@ -18,6 +18,7 @@ import BarLoader from "../srcl/components/BarLoader"
 import Dialog from "../srcl/components/Dialog"
 import RowSpaceBetween from "../srcl/components/RowSpaceBetween"
 import { ThemeToggle } from "../srcl/theme"
+import styles from "./Dashboard.module.css"
 
 export function Dashboard({ status }: { status: AuthStatus }) {
   const queryClient = useQueryClient()
@@ -161,13 +162,7 @@ export function Dashboard({ status }: { status: AuthStatus }) {
     <Window>
       <RowSpaceBetween style={{ marginBottom: "1rem" }}>
         <span>Chat Faucet</span>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "2ch",
-          }}
-        >
+        <span className={styles.headerActions}>
           <Link to="/playground">playground</Link>
           <Link to="/docs">docs</Link>
           <button type="button" onClick={signOut} style={linkButtonStyle}>
@@ -204,7 +199,7 @@ Authorization: Bearer <your api key>`}</pre>
       <div style={{ height: "1rem" }} />
 
       <Card title="CREATE API KEY">
-        <RowSpaceBetween style={{ gap: "1ch", alignItems: "stretch" }}>
+        <RowSpaceBetween className={styles.createRow}>
           <input
             ref={nameInputRef}
             type="text"
@@ -220,7 +215,7 @@ Authorization: Bearer <your api key>`}</pre>
             autoCorrect="off"
             maxLength={64}
           />
-          <div style={{ width: "24ch", flexShrink: 0 }}>
+          <div className={styles.createButton}>
             <Button onClick={create}>Create</Button>
           </div>
         </RowSpaceBetween>
@@ -396,7 +391,7 @@ Authorization: Bearer <your api key>`}</pre>
       <div style={{ height: "1rem" }} />
 
       <Card title="ACCOUNT">
-        <RowSpaceBetween style={{ alignItems: "baseline", gap: "2ch" }}>
+        <RowSpaceBetween className={styles.accountRow}>
           <span style={{ opacity: 0.7 }}>
             Permanently delete your account, tokens, sessions, and API keys.
           </span>
@@ -661,7 +656,7 @@ function messageFromError(e: unknown): string {
 }
 
 const inputStyle: React.CSSProperties = {
-  flex: 1,
+  flex: "1 1 auto",
   minWidth: 0,
   fontFamily: "inherit",
   fontSize: "inherit",

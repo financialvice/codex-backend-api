@@ -7,6 +7,7 @@ import Button from "../srcl/components/Button"
 import BlockLoader from "../srcl/components/BlockLoader"
 import RowSpaceBetween from "../srcl/components/RowSpaceBetween"
 import { ThemeToggle } from "../srcl/theme"
+import styles from "./Landing.module.css"
 
 type State =
   | { kind: "idle" }
@@ -106,13 +107,7 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
     <Window>
       <RowSpaceBetween style={{ marginBottom: "1rem" }}>
         <span>Chat Faucet</span>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "2ch",
-          }}
-        >
+        <span className={styles.headerActions}>
           <Link to="/docs">docs</Link>
           <a
             href={`https://github.com/${REPO}`}
@@ -144,9 +139,18 @@ export function Landing({ onAuthed }: { onAuthed: () => void }) {
             }}
           >
             <Button onClick={copyAgentPrompt}>
-              {copiedPrompt
-                ? "Copied prompt"
-                : "Get started with agent (copy prompt)"}
+              {copiedPrompt ? (
+                "Copied prompt"
+              ) : (
+                <>
+                  <span className={styles.btnLabelFull}>
+                    Get started with agent (copy prompt)
+                  </span>
+                  <span className={styles.btnLabelShort}>
+                    Set up with agent
+                  </span>
+                </>
+              )}
             </Button>
             <Button theme="SECONDARY" onClick={start}>
               Sign in with ChatGPT
@@ -263,85 +267,30 @@ function SegmentedCode({
 }) {
   const groups = code.split("-")
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "2ch",
-        flexWrap: "wrap",
-      }}
-    >
+    <div className={styles.code}>
       <div
-        role="button"
-        tabIndex={0}
-        onClick={onCopy}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault()
-            onCopy()
-          }
-        }}
-        aria-label={`Copy code ${code}`}
-        title="click to copy"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.75ch",
-          cursor: "pointer",
-          userSelect: "all",
-        }}
+        aria-label={`Code ${code}`}
+        className={styles.codeButton}
+        style={{ userSelect: "all" }}
       >
         {groups.map((group, gi) => (
-          <div
-            key={gi}
-            style={{ display: "flex", alignItems: "center", gap: "0.5ch" }}
-          >
+          <div key={gi} className={styles.codeGroup}>
             {group.split("").map((ch, ci) => (
-              <span
-                key={ci}
-                style={{
-                  width: "1.6em",
-                  height: "1.8em",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow:
-                    "inset 0 0 0 2px var(--theme-focused-foreground)",
-                  color: "var(--theme-focused-foreground)",
-                  background: "transparent",
-                  fontFamily: "var(--font-family-mono)",
-                  fontSize: "1.35em",
-                  fontWeight: 700,
-                  lineHeight: 1,
-                }}
-              >
+              <span key={ci} className={styles.codeChar}>
                 {ch}
               </span>
             ))}
             {gi < groups.length - 1 && (
-              <span
-                style={{
-                  fontSize: "1.35em",
-                  color: "var(--theme-focused-foreground)",
-                  padding: "0 0.25ch",
-                }}
-              >
-                -
-              </span>
+              <span className={styles.codeDash}>-</span>
             )}
           </div>
         ))}
       </div>
-      <span
-        aria-live="polite"
-        style={{
-          opacity: copied ? 0.8 : 0,
-          transition: "opacity 150ms ease",
-          fontSize: "0.9em",
-        }}
-      >
-        copied to clipboard ✓
-      </span>
+      <div className={styles.copyButton}>
+        <Button theme="SECONDARY" onClick={onCopy} aria-live="polite">
+          {copied ? "Copied ✓" : "Copy"}
+        </Button>
+      </div>
     </div>
   )
 }

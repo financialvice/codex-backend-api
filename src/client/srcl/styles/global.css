@@ -471,6 +471,12 @@ selectors below derive every --theme-* token from that tint via OKLCH math.
   --theme-focused-foreground-subdued: oklch(from #0052ff l c h / 0.5);
 }
 
+@media (max-width: 560px) {
+  .theme-toggle-label {
+    display: none;
+  }
+}
+
 :where(html, body).theme-blue {
   --theme-overlay: var(--color-black-alpha-40);
   --theme-background: #0052ff;

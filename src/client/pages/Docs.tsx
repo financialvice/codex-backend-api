@@ -144,12 +144,12 @@ export function Docs({ path, signedIn }: { path: string; signedIn: boolean }) {
       <div style={{ height: "1rem" }} />
 
       <Card title="RAW MARKDOWN">
-        <RowSpaceBetween style={{ gap: "1ch", alignItems: "center" }}>
+        <RowSpaceBetween className={styles.rawRow}>
           <span>
             Fetch <a href="/docs.md"><code>/docs.md</code></a> or send{" "}
             <code>Accept: text/markdown</code>.
           </span>
-          <div style={{ width: "28ch", flexShrink: 0 }}>
+          <div className={styles.rawButton}>
             <Button theme="SECONDARY" onClick={copyPage} disabled={md == null}>
               {pageCopied ? "Copied ✓" : "Copy as markdown"}
             </Button>
