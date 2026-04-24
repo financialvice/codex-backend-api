@@ -109,15 +109,15 @@ export async function cliUploadTokens(
 
   const newAccessToken = refreshed.access_token;
   const newRefreshToken = refreshed.refresh_token ?? body.refresh_token;
-  const newIdToken = refreshed.id_token;
+  const newIdToken = refreshed.id_token ?? body.id_token;
   if (!newIdToken) {
     return error(
-      "refresh did not return an id_token; run `chatfaucet login` again",
+      "auth.json did not include an id_token; run `chatfaucet login --no-read-auth-json`",
       400
     );
   }
 
-  const accountId = extractAccountId(newIdToken);
+  const accountId = body.account_id || extractAccountId(newIdToken);
   if (!accountId) return error("could not resolve account id", 400);
 
   const tokens: StoredTokens = {

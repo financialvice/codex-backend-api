@@ -339,14 +339,7 @@ async function cmdLogin(args: string[]) {
       const ok = await confirmAuthJsonUpload(assumeYes);
       if (ok) {
         console.log("Found ~/.codex/auth.json — uploading tokens…");
-        try {
-          login = await uploadTokens(tokens, name);
-        } catch (e) {
-          console.log(
-            `Token upload failed (${String(e)}); falling back to browser sign-in.`
-          );
-          login = await browserFlow(name);
-        }
+        login = await uploadTokens(tokens, name);
       } else {
         console.log("Okay — using browser sign-in instead.");
         login = await browserFlow(name);

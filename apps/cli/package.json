@@ -1,6 +1,6 @@
 {
   "name": "chatfaucet",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "CLI for Chat Faucet — your ChatGPT plan as an OpenAI-compatible Responses API.",
   "type": "module",
   "bin": {

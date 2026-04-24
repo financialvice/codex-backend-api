@@ -52,11 +52,11 @@ export async function refreshWithCodex(refreshToken: string): Promise<{
 }> {
   const r = await fetch(`${CODEX_ISSUER}/oauth/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      client_id: CODEX_CLIENT_ID,
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
       grant_type: "refresh_token",
       refresh_token: refreshToken,
+      client_id: CODEX_CLIENT_ID,
     }),
   });
   if (!r.ok) {
