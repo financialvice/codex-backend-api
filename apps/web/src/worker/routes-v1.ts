@@ -86,6 +86,14 @@ async function proxy(
     if (k === "content-encoding" || k === "content-length") return;
     respHeaders.set(key, value);
   });
+  if (!respHeaders.has("content-type")) {
+    respHeaders.set(
+      "content-type",
+      upstreamPath.endsWith("/responses")
+        ? "text/event-stream; charset=utf-8"
+        : "application/json; charset=utf-8"
+    );
+  }
   return new Response(upstream.body, {
     status: upstream.status,
     headers: respHeaders,

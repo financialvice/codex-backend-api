@@ -124,8 +124,14 @@ const SUCCESS_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"
 
 const ERROR_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Chat Faucet — sign-in failed</title><style>html,body{margin:0;padding:0;background:#0b0b0b;color:#eaeaea;font-family:ui-monospace,Menlo,Monaco,monospace}main{max-width:480px;margin:6rem auto;padding:0 1.25rem;line-height:1.55}h1{font-size:1.05rem;font-weight:600;letter-spacing:-0.01em;margin:0 0 0.75rem;color:#ff8e8e}p{font-size:0.95rem;opacity:0.8;margin:0 0 0.5rem}</style></head><body><main><h1>Sign-in failed</h1><p>Close this tab, return to your terminal, and run <code>bunx chatfaucet login</code> again.</p></main></body></html>`;
 
-async function waitForCallback(state: string): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
+async function startCallbackServer(state: string): Promise<Promise<string>> {
+  let onReady: (() => void) | null = null;
+  let onReadyError: ((err: Error) => void) | null = null;
+  const ready = new Promise<void>((resolve, reject) => {
+    onReady = resolve;
+    onReadyError = reject;
+  });
+  const codePromise = new Promise<string>((resolve, reject) => {
     let settled = false;
     const finish = (err: Error | null, code?: string) => {
       if (settled) {
@@ -165,18 +171,20 @@ async function waitForCallback(state: string): Promise<string> {
       finish(null, code);
     });
     server.on("error", (e: NodeJS.ErrnoException) => {
-      if (e.code === "EADDRINUSE") {
-        finish(
-          new Error(
-            `port ${CALLBACK_PORT} is in use (likely the Codex or Pi CLI). Close that process and rerun \`chatfaucet login\`.`
-          )
-        );
-      } else {
-        finish(e);
-      }
+      const err =
+        e.code === "EADDRINUSE"
+          ? new Error(
+              `port ${CALLBACK_PORT} is in use (likely the Codex or Pi CLI). Close that process and rerun \`chatfaucet login\`.`
+            )
+          : e;
+      finish(err);
+      onReadyError?.(err);
     });
-    server.listen(CALLBACK_PORT, CALLBACK_HOST);
+    server.listen(CALLBACK_PORT, CALLBACK_HOST, () => onReady?.());
   });
+  codePromise.catch(() => {});
+  await ready;
+  return codePromise;
 }
 
 async function exchangeCode(
@@ -309,9 +317,7 @@ async function createKeyFromConfig(
 async function browserFlow(name: string): Promise<LoginResult> {
   const { verifier, challenge, state } = generatePkce();
   const authUrl = buildAuthorizeUrl(challenge, state);
-  const waitPromise = waitForCallback(state);
-  // Small delay so the server is bound before we tell the user to navigate.
-  await new Promise((r) => setTimeout(r, 50));
+  const waitPromise = await startCallbackServer(state);
 
   console.log("");
   console.log("  Opening your browser to sign in with ChatGPT…");
