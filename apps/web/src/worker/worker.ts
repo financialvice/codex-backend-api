@@ -10,7 +10,12 @@ import {
   handleSignOut,
   requireSession,
 } from "./routes-auth";
-import { cliBrowserSignIn, cliUploadTokens } from "./routes-cli";
+import {
+  cliBrowserSignIn,
+  cliCreateKey,
+  cliExistingLogin,
+  cliUploadTokens,
+} from "./routes-cli";
 import { getDoc, listDocs } from "./routes-docs";
 import { createKey, listKeys, revokeKey } from "./routes-keys";
 import { sessionUsage } from "./routes-usage";
@@ -76,6 +81,10 @@ function handleApi(
 
   if (p === "/api/cli/upload-tokens" && request.method === "POST")
     return cliUploadTokens(request, env);
+  if (p === "/api/cli/existing-login" && request.method === "POST")
+    return cliExistingLogin(request, env);
+  if (p === "/api/cli/keys" && request.method === "POST")
+    return cliCreateKey(request, env);
   const cliSignInMatch = p.match(/^\/api\/cli\/sign-in\/([^/]+)$/);
   if (cliSignInMatch && request.method === "GET")
     return cliBrowserSignIn(cliSignInMatch[1]!, env);

@@ -361,7 +361,7 @@ Then follow the docs to create my account and mint an API key with the CLI:
 
 bunx chatfaucet login --name agent
 
-Complete the browser authorization flow when it opens. After setup, configure this shell/project with OPENAI_API_KEY and OPENAI_BASE_URL from \`bunx chatfaucet env\`, then verify with /v1/models or /v1/usage.
+Complete the browser authorization flow if it opens. If the CLI reuses an existing ~/.chatfaucet.json login, continue without browser auth. After setup, configure this shell/project with OPENAI_API_KEY and OPENAI_BASE_URL from \`bunx chatfaucet env\`, then verify with /v1/models or /v1/usage.
 
 The CLI prints a one-time "Sign-in link:" for the web dashboard after login. Include that exact full URL in your final answer so I can open the GUI already signed in. Do not ask me for an OpenAI API key.`;
 

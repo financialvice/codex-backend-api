@@ -33,6 +33,13 @@ interface LoginResult extends Config {
   sign_in_url?: string;
 }
 
+interface ExistingLoginResult {
+  base_url: string;
+  email: string | null;
+  key_id: string;
+  sign_in_url?: string;
+}
+
 async function readConfig(): Promise<Config | null> {
   try {
     return JSON.parse(await readFile(CONFIG, "utf8")) as Config;
@@ -260,6 +267,45 @@ async function uploadTokens(
   return (await r.json()) as LoginResult;
 }
 
+async function existingLogin(c: Config): Promise<LoginResult | null> {
+  const r = await fetch(`${c.base_url}/api/cli/existing-login`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${c.api_key}` },
+  });
+  if (r.status === 401 || r.status === 403 || r.status === 404) {
+    return null;
+  }
+  if (!r.ok) {
+    throw new Error(`existing-login failed: ${r.status} ${await r.text()}`);
+  }
+  const body = (await r.json()) as ExistingLoginResult;
+  return {
+    api_key: c.api_key,
+    base_url: body.base_url,
+    email: body.email,
+    key_id: body.key_id,
+    sign_in_url: body.sign_in_url,
+  };
+}
+
+async function createKeyFromConfig(
+  c: Config,
+  name: string
+): Promise<LoginResult> {
+  const r = await fetch(`${c.base_url}/api/cli/keys`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${c.api_key}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+  if (!r.ok) {
+    throw new Error(`create key failed: ${r.status} ${await r.text()}`);
+  }
+  return (await r.json()) as LoginResult;
+}
+
 async function browserFlow(name: string): Promise<LoginResult> {
   const { verifier, challenge, state } = generatePkce();
   const authUrl = buildAuthorizeUrl(challenge, state);
@@ -302,7 +348,68 @@ function hasFlag(args: string[], flag: string): boolean {
 
 async function cmdLogin(args: string[]) {
   const name = getArg(args, "--name") ?? "cli";
-  const login = await browserFlow(name);
+  const force = hasFlag(args, "--force");
+  const existing = force ? null : await readConfig();
+  const login = existing ? await existingLogin(existing) : null;
+  if (login) {
+    await writeConfig({
+      base_url: login.base_url,
+      api_key: login.api_key,
+      email: login.email,
+      key_id: login.key_id,
+    });
+    console.log("");
+    console.log(`  Already signed in as ${login.email ?? "(email unknown)"}`);
+    console.log(`  Base URL:   ${login.base_url}`);
+    console.log(`  API Key:    ${login.api_key}`);
+    if (login.sign_in_url) {
+      console.log(`  Sign-in link: ${login.sign_in_url}`);
+      console.log(
+        "  Open this link to view the dashboard. It expires in 15 minutes and can be used once."
+      );
+    }
+    console.log("");
+    console.log(`  Saved to ${CONFIG}`);
+    console.log("");
+    console.log("  Run `chatfaucet env` to get shell exports.");
+    return;
+  }
+  if (existing) {
+    console.log(
+      "  Saved Chat Faucet key is no longer valid; opening browser sign-in."
+    );
+  }
+  const browserLogin = await browserFlow(name);
+  const cfg: Config = {
+    base_url: browserLogin.base_url,
+    api_key: browserLogin.api_key,
+    email: browserLogin.email,
+    key_id: browserLogin.key_id,
+  };
+  await writeConfig(cfg);
+  console.log("");
+  console.log(`  Signed in as ${cfg.email ?? "(email unknown)"}`);
+  console.log(`  Base URL:   ${cfg.base_url}`);
+  console.log(`  API Key:    ${cfg.api_key}`);
+  if (browserLogin.sign_in_url) {
+    console.log(`  Sign-in link: ${browserLogin.sign_in_url}`);
+    console.log(
+      "  Open this link to view the dashboard. It expires in 15 minutes and can be used once."
+    );
+  }
+  console.log("");
+  console.log(`  Saved to ${CONFIG}`);
+  console.log("");
+  console.log("  Run `chatfaucet env` to get shell exports.");
+}
+
+async function cmdKeysCreate(args: string[]) {
+  const name = getArg(args, "--name") ?? "cli";
+  const c = await readConfig();
+  if (!c) {
+    throw new Error("not logged in — run `chatfaucet login`");
+  }
+  const login = await createKeyFromConfig(c, name);
   const cfg: Config = {
     base_url: login.base_url,
     api_key: login.api_key,
@@ -311,7 +418,7 @@ async function cmdLogin(args: string[]) {
   };
   await writeConfig(cfg);
   console.log("");
-  console.log(`  Signed in as ${cfg.email ?? "(email unknown)"}`);
+  console.log(`  Created key "${name}" for ${cfg.email ?? "(email unknown)"}`);
   console.log(`  Base URL:   ${cfg.base_url}`);
   console.log(`  API Key:    ${cfg.api_key}`);
   if (login.sign_in_url) {
@@ -322,8 +429,6 @@ async function cmdLogin(args: string[]) {
   }
   console.log("");
   console.log(`  Saved to ${CONFIG}`);
-  console.log("");
-  console.log("  Run `chatfaucet env` to get shell exports.");
 }
 
 async function cmdEnv() {
@@ -392,9 +497,10 @@ function help() {
   console.log(`Chat Faucet — your ChatGPT plan as an OpenAI-compatible Responses API
 
 Usage:
-  chatfaucet login [--name <label>]
+  chatfaucet login [--name <label>] [--force]
   chatfaucet env
   chatfaucet keys
+  chatfaucet keys create [--name <label>]
   chatfaucet logout
   chatfaucet delete-account --yes
   chatfaucet --help
@@ -416,7 +522,11 @@ async function main() {
         await cmdEnv();
         break;
       case "keys":
-        await cmdKeysList();
+        if (rest[0] === "create") {
+          await cmdKeysCreate(rest.slice(1));
+        } else {
+          await cmdKeysList();
+        }
         break;
       case "logout":
         await cmdLogout();

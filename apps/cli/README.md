@@ -19,6 +19,8 @@ export OPENAI_API_KEY="chf_..."
 export OPENAI_BASE_URL="https://chatfaucet.com/v1"
 ```
 
+`login` opens browser sign-in the first time. After that, if `~/.chatfaucet.json` contains a valid key, it reuses that local login and skips the browser.
+
 `login` also prints a one-time `Sign-in link:`. Open it in a browser to view the dashboard already signed in; it expires after 15 minutes and can be used once.
 
 Bun users can swap `npx` for `bunx`:
@@ -30,9 +32,10 @@ bunx chatfaucet login
 ## Commands
 
 ```sh
-chatfaucet login [--name <label>]
+chatfaucet login [--name <label>] [--force]
 chatfaucet env
 chatfaucet keys
+chatfaucet keys create [--name <label>]
 chatfaucet logout
 chatfaucet delete-account --yes
 chatfaucet --help

@@ -118,11 +118,14 @@ curl https://chatfaucet.com/v1/usage \
 ```bash
 bunx chatfaucet login
 bunx chatfaucet login --name "laptop"
+bunx chatfaucet keys create --name "desktop"
 ```
 
-`login` opens your browser to sign in with ChatGPT and completes the OAuth handshake via a local callback on `http://127.0.0.1:1455` — no codes to copy. On success it prints your API key and saves config to `~/.chatfaucet.json`.
+`login` opens your browser to sign in with ChatGPT and completes the OAuth handshake via a local callback on `http://127.0.0.1:1455` — no codes to copy. On success it prints your API key and saves config to `~/.chatfaucet.json`. Future `login` runs reuse that saved Chat Faucet key when it is still valid and skip browser sign-in; use `login --force` to run browser OAuth again.
 
 `login` also prints a one-time dashboard sign-in link. Open it in a browser to land in the web UI with a normal session cookie. The link expires after 15 minutes and can be used once.
+
+`keys create` mints a fresh API key from the saved `~/.chatfaucet.json` login, writes it back to that file, and leaves your older keys active until you revoke them in the dashboard.
 
 ```bash
 eval "$(bunx chatfaucet env)"

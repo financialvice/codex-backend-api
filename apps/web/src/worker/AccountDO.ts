@@ -117,6 +117,14 @@ export class AccountDO extends DurableObject<Env> {
           access_token_exp: decodeJwtExp(body.access_token),
           last_refresh: Math.floor(Date.now() / 1000),
         };
+        const latest = await this.getTokens();
+        if (
+          latest &&
+          (latest.refresh_token !== cur.refresh_token ||
+            latest.last_refresh > cur.last_refresh)
+        ) {
+          return latest;
+        }
         await this.setTokens(next);
         return next;
       } finally {

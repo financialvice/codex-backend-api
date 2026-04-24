@@ -10,6 +10,7 @@ import {
   consumeCliSignInToken,
   createCliSignInToken,
   createSession,
+  getAccountByApiKey,
   setApiKey,
 } from "./index-kv";
 import { mkSessionCookie } from "./routes-auth";
@@ -33,6 +34,19 @@ function mintRawKey(): string {
 function getStub(env: Env, accountId: string) {
   const id = env.ACCOUNT_DO.idFromName(accountId);
   return env.ACCOUNT_DO.get(id);
+}
+
+async function authCliKey(
+  req: Request,
+  env: Env
+): Promise<{ accountId: string; keyId: string } | Response> {
+  const auth = req.headers.get("authorization") || "";
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  if (!m) return error("missing Bearer token", 401);
+
+  const row = await getAccountByApiKey(env, m[1]!.trim());
+  if (!row) return error("invalid api key", 401);
+  return { accountId: row.account_id, keyId: row.key_id };
 }
 
 async function createApiKey(
@@ -74,6 +88,76 @@ async function finishCliAuth(
     ok: true,
     status: "success",
     email,
+    base_url: `https://${env.APP_HOSTNAME}`,
+    api_key: key.key,
+    key_id: key.id,
+    sign_in_url: `https://${env.APP_HOSTNAME}${CLI_SIGN_IN_PREFIX}${signInToken}`,
+  });
+}
+
+export async function cliExistingLogin(
+  req: Request,
+  env: Env
+): Promise<Response> {
+  const auth = await authCliKey(req, env);
+  if (auth instanceof Response) return auth;
+  const limited = await rateLimit(
+    env,
+    req,
+    "cli-existing-login",
+    20,
+    60,
+    auth.accountId
+  );
+  if (limited) return limited;
+
+  const stub = getStub(env, auth.accountId);
+  const meta = await stub.getMeta();
+  const signInToken = await createCliSignInToken(env, {
+    account_id: auth.accountId,
+    email: meta?.email ?? null,
+  });
+  return json({
+    ok: true,
+    status: "success",
+    email: meta?.email ?? null,
+    base_url: `https://${env.APP_HOSTNAME}`,
+    key_id: auth.keyId,
+    sign_in_url: `https://${env.APP_HOSTNAME}${CLI_SIGN_IN_PREFIX}${signInToken}`,
+  });
+}
+
+export async function cliCreateKey(req: Request, env: Env): Promise<Response> {
+  const badJson = requireJson(req);
+  if (badJson) return badJson;
+
+  const auth = await authCliKey(req, env);
+  if (auth instanceof Response) return auth;
+  const limited = await rateLimit(
+    env,
+    req,
+    "cli-create-key",
+    20,
+    60 * 60,
+    auth.accountId
+  );
+  if (limited) return limited;
+
+  const body = (await req.json().catch(() => ({}))) as { name?: string };
+  const key = await createApiKey(
+    env,
+    auth.accountId,
+    (body.name ?? "cli").slice(0, 64) || "cli"
+  );
+  const meta = await getStub(env, auth.accountId).getMeta();
+  const signInToken = await createCliSignInToken(env, {
+    account_id: auth.accountId,
+    email: meta?.email ?? null,
+  });
+  return json({
+    ok: true,
+    status: "success",
+    email: meta?.email ?? null,
     base_url: `https://${env.APP_HOSTNAME}`,
     api_key: key.key,
     key_id: key.id,
