@@ -1,4 +1,4 @@
-import { getAccountByApiKey } from "./index-kv";
+import { getActiveAccountByApiKey } from "./index-kv";
 import { error, rateLimit } from "./util";
 
 const CODEX_PREFIX = "/codex";
@@ -19,7 +19,7 @@ async function authAndResolve(
   if (!m) return error("missing Bearer token", 401);
   const apiKey = m[1]!.trim();
 
-  const row = await getAccountByApiKey(env, apiKey);
+  const row = await getActiveAccountByApiKey(env, apiKey);
   if (!row) return error("invalid api key", 401);
 
   return { accountId: row.account_id, keyId: row.key_id };

@@ -140,6 +140,13 @@ export class AccountDO extends DurableObject<Env> {
       .toArray();
   }
 
+  async getKey(id: string): Promise<ApiKey | null> {
+    const rows = this.ctx.storage.sql
+      .exec<ApiKey>("SELECT * FROM api_keys WHERE id = ?", id)
+      .toArray();
+    return rows[0] ?? null;
+  }
+
   async insertKey(k: ApiKey): Promise<void> {
     this.ctx.storage.sql.exec(
       "INSERT INTO api_keys(id, name, prefix, hash, created_at, last_used_at, revoked_at) VALUES (?, ?, ?, ?, ?, ?, ?)",

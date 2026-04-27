@@ -1,4 +1,4 @@
-import { deleteApiKeyByHash, getAccountByApiKey } from "./index-kv";
+import { deleteApiKeyByHash, getActiveAccountByApiKey } from "./index-kv";
 import { clearSessionCookie, requireSession } from "./routes-auth";
 import { error, json, requireSameOrigin } from "./util";
 
@@ -56,7 +56,7 @@ export async function deleteAccountByApiKey(
     return error("missing Bearer token", 401);
   }
 
-  const row = await getAccountByApiKey(env, apiKey);
+  const row = await getActiveAccountByApiKey(env, apiKey);
   if (!row) {
     return error("invalid api key", 401);
   }

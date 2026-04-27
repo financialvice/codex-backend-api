@@ -1,12 +1,32 @@
 import { sha256Hex } from "./util";
 
-export async function getAccountByApiKey(
+export interface ApiKeyIndexRow {
+  account_id: string;
+  key_id: string;
+}
+
+function getStub(env: Env, accountId: string) {
+  const id = env.ACCOUNT_DO.idFromName(accountId);
+  return env.ACCOUNT_DO.get(id);
+}
+
+export async function getActiveAccountByApiKey(
   env: Env,
   apiKey: string
-): Promise<{ account_id: string; key_id: string } | null> {
-  const h = await sha256Hex(apiKey);
-  const v = await env.INDEX.get(`key:${h}`, "json");
-  return v as { account_id: string; key_id: string } | null;
+): Promise<ApiKeyIndexRow | null> {
+  const hash = await sha256Hex(apiKey);
+  const row = (await env.INDEX.get(
+    `key:${hash}`,
+    "json"
+  )) as ApiKeyIndexRow | null;
+  if (!row) return null;
+
+  const key = await getStub(env, row.account_id).getKey(row.key_id);
+  if (!key || key.revoked_at != null || key.hash !== hash) {
+    return null;
+  }
+
+  return row;
 }
 
 export async function setApiKey(

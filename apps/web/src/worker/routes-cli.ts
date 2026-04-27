@@ -10,7 +10,7 @@ import {
   consumeCliSignInToken,
   createCliSignInToken,
   createSession,
-  getAccountByApiKey,
+  getActiveAccountByApiKey,
   setApiKey,
 } from "./index-kv";
 import { mkSessionCookie } from "./routes-auth";
@@ -55,7 +55,7 @@ async function authCliKey(
   const m = auth.match(/^Bearer\s+(.+)$/i);
   if (!m) return error("missing Bearer token", 401);
 
-  const row = await getAccountByApiKey(env, m[1]!.trim());
+  const row = await getActiveAccountByApiKey(env, m[1]!.trim());
   if (!row) return error("invalid api key", 401);
   return { accountId: row.account_id, keyId: row.key_id };
 }
@@ -226,13 +226,15 @@ export async function cliUploadTokens(
 
   const newAccessToken = refreshed.access_token;
   const newRefreshToken = refreshed.refresh_token ?? body.refresh_token;
-  const newIdToken = refreshed.id_token ?? body.id_token;
-  if (!newIdToken) {
-    return error("token response missing id_token", 400);
-  }
+  const newIdToken = refreshed.id_token ?? "";
 
-  const accountId = body.account_id || extractAccountId(newIdToken);
+  const accountId =
+    extractTrustedAccountId(refreshed.id_token) ??
+    extractTrustedAccountId(newAccessToken);
   if (!accountId) return error("could not resolve account id", 400);
+  if (body.account_id && body.account_id !== accountId) {
+    return error("account_id mismatch", 400);
+  }
 
   const tokens: StoredTokens = {
     access_token: newAccessToken,
@@ -243,13 +245,35 @@ export async function cliUploadTokens(
     last_refresh: Math.floor(Date.now() / 1000),
   };
 
-  const up = await upsertAccount(env, tokens, extractEmail(newIdToken));
+  const up = await upsertAccount(
+    env,
+    tokens,
+    extractTrustedEmail(refreshed.id_token)
+  );
   return finishCliAuth(
     env,
     up.accountId,
     up.email,
     (body.key_name ?? "cli").slice(0, 64) || "cli"
   );
+}
+
+function extractTrustedAccountId(jwt: string | undefined): string | null {
+  if (!jwt) return null;
+  try {
+    return extractAccountId(jwt);
+  } catch {
+    return null;
+  }
+}
+
+function extractTrustedEmail(jwt: string | undefined): string | null {
+  if (!jwt) return null;
+  try {
+    return extractEmail(jwt);
+  } catch {
+    return null;
+  }
 }
 
 export async function cliBrowserSignIn(

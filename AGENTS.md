@@ -1,6 +1,4 @@
-# AGENTS.md
-
-Instructions for AI coding agents working with this codebase.
+- use "bunx opensrc" to add and explore source code of dependencies
 
 <!-- opensrc:start -->
 
