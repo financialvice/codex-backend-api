@@ -1,6 +1,6 @@
 # Chat Faucet
 
-![Chat Faucet — your ChatGPT plan exposed as an OpenAI Responses API](./public/og.png)
+![Chat Faucet — your ChatGPT plan exposed as an OpenAI Responses API](./apps/web/public/og.png)
 
 ## what it do
 - gives you a more OPENAI_API_KEY-like experience by managing your codex auth creds and letting you mint your own api keys to use against the chatfaucet.com/v1 base url
