@@ -149,7 +149,8 @@ export async function handleResponses(
   );
   if (limited) return limited;
   ctx.waitUntil(getStub(env, a.accountId).touchKey(a.keyId));
-  return proxy(req, env, a.accountId, `${CODEX_PREFIX}/responses`);
+  const normalized = await normalizeResponsesRequest(req);
+  return proxy(normalized, env, a.accountId, `${CODEX_PREFIX}/responses`);
 }
 
 export async function handleModels(
@@ -195,4 +196,91 @@ export async function handleUsage(
   return proxy(req, env, a.accountId, `${WHAM_PREFIX}/usage`, {
     useBody: false,
   });
+}
+
+async function normalizeResponsesRequest(req: Request): Promise<Request> {
+  const contentType = req.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return req;
+  }
+
+  let body: unknown;
+  try {
+    body = await req.clone().json();
+  } catch {
+    return req;
+  }
+
+  const normalized = normalizeInputContent(body);
+  if (normalized === body) return req;
+
+  return new Request(req, {
+    body: JSON.stringify(normalized),
+  });
+}
+
+function normalizeInputContent(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    let changed = false;
+    const normalized = value.map((item) => {
+      const next = normalizeInputContent(item);
+      changed ||= next !== item;
+      return next;
+    });
+    return changed ? normalized : value;
+  }
+
+  if (!isRecord(value)) return value;
+
+  const imagePart = normalizeImagePart(value);
+  if (imagePart) return imagePart;
+
+  let changed = false;
+  const normalized: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value)) {
+    const next = normalizeInputContent(child);
+    changed ||= next !== child;
+    normalized[key] = next;
+  }
+  return changed ? normalized : value;
+}
+
+function normalizeImagePart(
+  value: Record<string, unknown>
+): Record<string, unknown> | null {
+  if (value.type === "input_image") {
+    const imageUrl = normalizeImageUrl(value.image_url);
+    if (!imageUrl) return null;
+
+    return {
+      ...value,
+      image_url: imageUrl,
+    };
+  }
+
+  if (value.type === "input_file") {
+    const fileData = typeof value.file_data === "string" ? value.file_data : "";
+    if (!fileData.startsWith("data:image/")) return null;
+
+    const out: Record<string, unknown> = {
+      type: "input_image",
+      image_url: fileData,
+    };
+    if (value.detail != null) out.detail = value.detail;
+    return out;
+  }
+
+  return null;
+}
+
+function normalizeImageUrl(value: unknown): string | null {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (!isRecord(value)) return null;
+
+  const url = value.url;
+  return typeof url === "string" && url.length > 0 ? url : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

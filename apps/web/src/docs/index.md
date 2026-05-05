@@ -189,6 +189,28 @@ curl -N https://chatfaucet.com/v1/responses \
 
 The response is Server-Sent Events. Each `data:` line is a JSON event — watch for `response.output_text.delta` for streamed tokens and `response.completed` at the end.
 
+Image inputs are supported with OpenAI-style `input_image` content parts. Use
+a public URL or a `data:image/...;base64,...` URL:
+
+```bash
+curl -N https://chatfaucet.com/v1/responses \
+  -H "Authorization: Bearer $CHATFAUCET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.5",
+    "instructions": "",
+    "input": [
+      {"type": "message", "role": "user",
+       "content": [
+         {"type": "input_text", "text": "What is in this image?"},
+         {"type": "input_image", "image_url": "data:image/png;base64,..."}
+       ]}
+    ],
+    "stream": true,
+    "store": false
+  }'
+```
+
 Image generation is a tool, not an endpoint:
 
 ```bash
